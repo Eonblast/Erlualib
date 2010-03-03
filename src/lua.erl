@@ -105,7 +105,7 @@ pop(L) ->
 		{ok, R} = gettop(L),
 		if
 			R < 1 ->
-				nil;
+				{ok, empty};
 			true ->
 				{ok, T} = type_atom(L, R),
 				case T of
