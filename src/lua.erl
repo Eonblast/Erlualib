@@ -4,9 +4,14 @@
          close/1,
          call/3,
          concat/2,
+	 dostring/2,
+	 dofile/2,
+	 dump_table/2,
          getfield/3,
          getglobal/2,
          gettop/1,
+				 pop/1,
+				 push/2,
          pushboolean/2,
          pushinteger/2,
          pushstring/2,
@@ -19,7 +24,9 @@
          tointeger/2,
          tolstring/2,
          tonumber/2,
-         type/2]).
+         type/2,
+				 type_atom/2
+				 ]).
 
 -include("lua.hrl").
 -include("lua_api.hrl").
@@ -30,12 +37,55 @@ new_state() ->
 close(L) ->
     lua_driver:close(L).
 
+dostring(#lua{port=Port}, Code) ->
+    port_command(Port, term_to_binary({?ERL_LUAL_DOSTRING, Code})),
+    receive_simple_response().
+
+dofile(#lua{port=Port}, Filename) ->
+	port_command(Port, term_to_binary({?ERL_LUAL_DOFILE, Filename})),
+	receive_simple_response().
+
 call(L, Args, Results) ->
     command(L, {?ERL_LUA_CALL, Args, Results}),
     receive_simple_response().
     
 concat(L, N) ->
     command(L, {?ERL_LUA_CONCAT, N}).
+
+dump_table(L, N) ->
+	dump_table(L, N, none).
+
+dump_table(L, N, NextKey) ->
+	io:format("dump_table(~p, ~p)~n", [N, NextKey]),
+	case NextKey of
+		none ->
+			Str=lists:concat(["tmpkey, tmpval = pairs(", N, ")(", N, ")"]);
+		NK ->
+			Str=lists:concat(["tmpkey, tmpval = pairs(", N, ")(", N, ", \"", NK, "\")"])
+	end,
+	io:format("Str == ~p~n", [Str]),
+	lual:dostring(L, Str),
+	lua:getglobal(L, "tmpkey"),
+	{ok, T} = lua:type(L, -1),
+	case T of
+		?LUA_TNIL -> [];
+		_ ->
+			{ok, K} = lua:tolstring(L, -1),
+			lua:remove(L, -1),
+			lua:getglobal(L, "tmpval"),
+			{ok, VT} = lua:type(L, -1),
+			io:format("type == ~p~n", [VT]),
+			case VT of
+				?LUA_TNUMBER ->
+					{ok, V} = lua:tonumber(L, -1);
+				?LUA_TTABLE ->
+					V = dump_table(L, lists:concat([N, ".", K]));
+				_ ->
+					{ok, V} = lua:tolstring(L, -1)
+			end,
+			lua:remove(L, -1),
+			[{list_to_atom(K),V}|dump_table(L, N, K)]
+	end.
 
 getfield(L, global, Name) ->
     getglobal(L, Name);
@@ -51,6 +101,43 @@ gettop(L) ->
     command(L, {?ERL_LUA_GETTOP}),
     receive_valued_response().
     
+pop(L) ->
+		{ok, R} = gettop(L),
+		if
+			R < 1 ->
+				nil;
+			true ->
+				{ok, T} = type_atom(L, R),
+				case T of
+					number ->
+						{ok, N} = tonumber(L, R),
+						remove(L, R),
+						{ok, number, N};
+					string ->
+						{ok, N} = tolstring(L, R),
+						remove(L, R),
+						{ok, string, N};
+					boolean ->
+						{other, N} = toboolean(L, R),
+						remove(L, R),
+						{ok, boolean, N};
+					_ ->
+						{ok, N} = tolstring(L, R),
+						remove(L, R),
+						{ok, unknown, N}
+				end
+		end.
+
+push(L, Term) when is_number(Term) ->
+	pushnumber(L, Term);
+push(L, Term) when is_list(Term) ->
+	pushstring(L, Term);
+push(L, true) ->
+	pushboolean(L, true);
+push(L, false) ->
+	pushboolean(L, false);
+push(L, Term) when is_atom(Term) ->
+	pushstring(L, atom_to_list(Term)).
 
 pushboolean(L, Bool) ->
     command(L, {?ERL_LUA_PUSHBOOLEAN, Bool}),
@@ -108,7 +195,41 @@ type(L, Index) ->
     command(L, {?ERL_LUA_TYPE, Index}),
     receive_valued_response().
 
+type_atom(L, Index) ->
+	command(L, {?ERL_LUA_TYPE, Index}),
+	R = receive_valued_response(),
+	case R of
+		{ok, Str} ->
+			{ok, type_int_to_atom(Str)};
+		_ ->
+			R
+	end.
 
+type_int_to_atom(TypeInt) when is_integer(TypeInt) ->
+	case TypeInt of
+		0 ->
+			Atom = nil;
+		1 ->
+			Atom = boolean;
+		2 ->
+			Atom = light_user_data;
+		3 ->
+			Atom = number;
+		4 ->
+			Atom = string;
+		5 ->
+			Atom = table;
+		6 ->
+			Atom = function;
+		7 ->
+			Atom = user_data;
+		8 ->
+			Atom = thread;
+		_ ->
+			Atom = unknown
+	end,
+	Atom.
+	
 command(#lua{port=Port}, Data) ->
     port_command(Port, term_to_binary(Data)).
 
