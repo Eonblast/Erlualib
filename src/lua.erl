@@ -10,6 +10,7 @@
          getfield/3,
          getglobal/2,
          gettop/1,
+				 next/2,
 				 pop/1,
 				 push/2,
          pushboolean/2,
@@ -101,6 +102,10 @@ gettop(L) ->
     command(L, {?ERL_LUA_GETTOP}),
     receive_valued_response().
     
+next(L, Index) ->
+	command(L, {?ERL_LUA_NEXT, Index}),
+	receive_simple_response().
+
 pop(L) ->
 		{ok, R} = gettop(L),
 		if
