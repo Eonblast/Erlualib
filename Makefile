@@ -22,6 +22,9 @@ ebin/%.beam: src/%.erl
 $(LIB): $(OBJECTS)
 	$(GCC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -o $(LIB) $(OBJECTS) $(STATICLIBS)
 
+test: ebin/lua_test.beam
+	$(ERL) -pa ebin/ -noshell -s lua_test test -s init stop
+
 clean:
 	rm -f ebin/*.beam
 	rm -f build/*.o
