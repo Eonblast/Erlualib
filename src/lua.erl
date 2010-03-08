@@ -9,6 +9,8 @@
 	 dump_table/2,
          getfield/3,
          getglobal/2,
+				 gettable/3,
+				 gettable/2,
          gettop/1,
 				 next/2,
 				 pop/1,
@@ -97,6 +99,37 @@ getfield(L, Index, Name) ->
 getglobal(L, Name) ->
     command(L, {?ERL_LUA_GETGLOBAL, Name}),
     receive_simple_response().
+
+gettable(L, global, Name) ->
+	getfield(L, global, Name),
+	{ok, T} = gettop(L),
+	Table = gettable(L, T),
+	lua:remove(L, T),
+	Table.
+
+gettable(L, T) ->
+	pushnil(L),
+	gettablekey(L, T).
+
+gettablekey(L, T) ->
+	next(L, T),
+	{ok, OT} = gettop(L),
+	case OT of
+		T ->
+			[];
+		_ ->
+			case type_atom(L, -1) of
+				{ok, table} ->
+					{ok, Key} = tolstring(L, -2),
+					KV = {Key, gettable(L, T + 2)},
+					remove(L, -1),
+					[KV|gettablekey(L, T)];
+				_ ->
+					{ok, _Type, Val} = pop(L),
+					{ok, Key} = tolstring(L, -1),
+					[{Key, Val}|gettablekey(L, T)]
+		end
+	end.
 
 gettop(L) ->
     command(L, {?ERL_LUA_GETTOP}),
