@@ -100,6 +100,8 @@ getglobal(L, Name) ->
     command(L, {?ERL_LUA_GETGLOBAL, Name}),
     receive_simple_response().
 
+gettable(L, global, Name) when is_atom(Name) ->
+	gettable(L, global, atom_to_list(Name));
 gettable(L, global, Name) ->
 	getfield(L, global, Name),
 	{ok, T} = gettop(L),
@@ -118,15 +120,29 @@ gettablekey(L, T) ->
 		T ->
 			[];
 		_ ->
+      %% values can be tables or anything else
+      %% recurse on tables
 			case type_atom(L, -1) of
 				{ok, table} ->
-					{ok, Key} = tolstring(L, -2),
+          %% keys can be strings or numbers
+          case type_atom(L, -2) of 
+            {ok, number} -> 
+              {ok, Key} = tonumber(L, -2);
+            _KT -> 
+              {ok, Key} = tolstring(L, -2)
+          end,
 					KV = {Key, gettable(L, T + 2)},
 					remove(L, -1),
 					[KV|gettablekey(L, T)];
-				_ ->
+				_TA ->
 					{ok, _Type, Val} = pop(L),
-					{ok, Key} = tolstring(L, -1),
+          %% keys can be strings or numbers
+          case type_atom(L, -1) of 
+            {ok, number} -> 
+              {ok, Key} = tonumber(L, -1);
+            _KT -> 
+              {ok, Key} = tolstring(L, -1)
+          end,
 					[{Key, Val}|gettablekey(L, T)]
 		end
 	end.
@@ -159,10 +175,12 @@ pop(L) ->
 						{other, N} = toboolean(L, R),
 						remove(L, R),
 						{ok, boolean, N};
-					_ ->
-						{ok, N} = tolstring(L, R),
+					function ->
 						remove(L, R),
-						{ok, unknown, N}
+					  {ok, function, function};
+					_ ->
+						remove(L, R),
+						{ok, unknown, unknown}
 				end
 		end.
 
