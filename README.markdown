@@ -7,6 +7,14 @@ Execute Lua scripts in Erlang the fastest way.
 This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.
 This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlua-node)
 
+This is a library for embedding Lua into Erlang. 
+It provides a simple interface that is very similar to the Lua C API.
+Ray is also working on a higher level API to simplify things further for the original erl-lua.
+
+WARNING: This is definitely not fully tested.
+Still a bunch of work to be done.
+If you are careful though, it should be pretty stable (no promises though).
+
 #### Example:
 
 	1> {ok, L} = lua:new_state().
@@ -16,16 +24,19 @@ This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlu
 	3> lua:gettable(L, global, "t").
 	[{"a",1},{"c",[{"a","whatever"}]},{"b","test"}]
 
-The aim of this library is to enable a high-level embedded-lua API for use in configuration
-processing and extension coding for erlang projects.  For a real-world example of this in 
-action, see [darrikmazey/erlmon](http://github.com/darrikmazey/erlmon).
+The aim of this library is to enable a high-level embedded-lua API 
+for use in configuration processing and extension coding for erlang projects.
+For a real-world example Darrik's erl-lua in action, see
+[darrikmazey/erlmon](http://github.com/darrikmazey/erlmon).
 
 ## Building
 
-* Edit makefile pathes
-* make
+* Makefiles
+* Pathes
+* Make
+* Unit Test
 
-#### Details: Makefiles
+### Makefiles
 
 There are three Makefiles provided
 
@@ -34,7 +45,7 @@ There are three Makefiles provided
 * Macports: Makefile.Macports
 
 
-#### Pathes
+### Pathes
 
 Pathes in the make files may need to be adjusted for version numbers and non-standard install prefixes.
 Do the following edits in the appropriate makefile:
@@ -67,7 +78,7 @@ Do the following edits in the appropriate makefile:
 
 	ERL_LIB=/usr/local/lib/erlang/lib/erl_interface-3.6.2
 
-#### Make
+### Make
 
 For Linux and plain Mac/Darwin source install simply do
 
@@ -77,7 +88,40 @@ For a Macports Erlang install on Mac do
 
         make -f Makefile.Macports
 
-#### Test
+### Unit Test
 
 	$ erl -pa ./ebin
 	1> eunit:test(lua_test). 
+
+## Samples
+
+Start the Erlang Shell with a path into ebin
+
+	$ erl -pa ./ebin
+
+Try this to print "Hello from Lua" from Lua:
+
+	1> {ok, L} = lua:new_state().
+	2> lua:getfield(L, global, "print").
+	3> lua:pushstring(L, "Hello from Lua!").
+	4> lua:call(L, 1, 0).
+
+These are the low level function calls as exposed by the Lua C API. 
+The last call prints this into the shell:
+
+	(Lua) => Hello from Lua!
+
+Try this to execute a Lua type-to-string call: 
+	
+	5> lua:getfield(L, global, "type").
+	6> lua:pushnumber(L, 23).
+	7> lua:call(L, 1, 1).
+	8> {ok, String} = lua:tolstring(L, 1).
+	9> lua:remove(L, 1). % always rebalance the stack!
+	10> String.
+	
+This prints the type of the pushed 23 into the shell:
+
+	"number" 
+
+
