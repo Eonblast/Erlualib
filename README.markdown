@@ -1,6 +1,8 @@
-## Erlilua
+## Erlualib
 
-Linked in Lua Driver for Erlang. Execute Lua scripts in Erlang the fastest way. 
+Linked in Lua Driver for Erlang.
+
+Execute Lua scripts in Erlang the fastest way. 
 
 This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.
 This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlua-node)
@@ -18,7 +20,7 @@ The aim of this library is to enable a high-level embedded-lua API for use in co
 processing and extension coding for erlang projects.  For a real-world example of this in 
 action, see [darrikmazey/erlmon](http://github.com/darrikmazey/erlmon).
 
-## Builing
+## Building
 
 * Edit makefile pathes
 * make
@@ -31,13 +33,6 @@ There are three Makefiles provided
 * Mac/Darwin: Makefile.Darwin
 * Macports: Makefile.Macports
 
-For Linux and plain Mac/Darwin source install simply do
-
-	make
-
-For a Macports Erlang install on Mac do
-
-	make -f Makefile.Macports
 
 #### Pathes
 
@@ -45,7 +40,7 @@ Pathes in the make files may need to be adjusted for version numbers and non-sta
 Do the following edits in the appropriate makefile:
 
 * Check for the erl_interface version number of your Erlang installation: 
-	
+
 	ls /usr/lib/erlang/lib 
 	- or -
 	ls /opt/local/lib/erlang/lib
@@ -72,4 +67,17 @@ Do the following edits in the appropriate makefile:
 
 	ERL_LIB=/usr/local/lib/erlang/lib/erl_interface-3.6.2
 
+#### Make
 
+For Linux and plain Mac/Darwin source install simply do
+
+        make
+
+For a Macports Erlang install on Mac do
+
+        make -f Makefile.Macports
+
+#### Test
+
+	$ erl -pa ./ebin
+	1> eunit:test(lua_test). 
