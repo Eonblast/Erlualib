@@ -2,7 +2,7 @@
 
 Linked in Lua Driver for Erlang.
 
-Execute Lua scripts in Erlang the fastest way. 
+Execute Lua scripts in Erlang the fastest and less secure way. See below 'Crashing the VM'.
 
 This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.
 This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlua-node)
@@ -14,6 +14,12 @@ Ray is also working on a higher level API to simplify things further for the ori
 WARNING: This is definitely not fully tested.
 Still a bunch of work to be done.
 If you are careful though, it should be pretty stable (no promises though).
+
+<div style='border: 2 px solid red; padding: 20px'>
+Doing as this driver does is discouraged, unless you have good reasons for it.
+It is safer to use a port, because this eliminates the danger that an
+ error in the extension can crash the entire Erlang VM.
+</div>
 
 #### Example:
 
@@ -31,10 +37,20 @@ For a real-world example Darrik's erl-lua in action, see
 
 ## Building
 
+* Quick
 * Makefiles
 * Pathes
 * Make
 * Unit Test
+
+### Quick
+
+You might be lucky, just try and execute 
+
+	$ make
+
+It's really only pathes that need to be fixed of this doesn't work.
+
 
 ### Makefiles
 
@@ -44,6 +60,8 @@ There are three Makefiles provided
 * Mac/Darwin: Makefile.Darwin
 * Macports: Makefile.Macports
 
+Calling make will call `uname` to decide to use Makefile.Linux or .Darwin.
+If you installed Erlang using Macports, see below.
 
 ### Pathes
 
@@ -52,9 +70,9 @@ Do the following edits in the appropriate makefile:
 
 * Check for the erl_interface version number of your Erlang installation: 
 
-	ls /usr/lib/erlang/lib 
-	- or -
-	ls /opt/local/lib/erlang/lib
+	$ ls /usr/lib/erlang/lib 
+	or
+	$ ls /opt/local/lib/erlang/lib
 
 * Put that version number in the path in first line of your makefile. (Don't add '/lib')  E.g.:
 
@@ -62,8 +80,8 @@ Do the following edits in the appropriate makefile:
 
 * Find erl_driver.h and ei.h
 
-	find / -name erl_driver.h
-	find / -name ei.h
+	$ find / -name erl_driver.h
+	$ find / -name ei.h
 
 * Add their pathes to second line in your make file. E.g. add to the line beginning fith CFLAGS:
 
@@ -71,27 +89,34 @@ Do the following edits in the appropriate makefile:
 
 * Find libei.a and liberl_interface.a
 
-	find / -name libei.a
-	find / -name liberl_interface.a
+	$ find / -name libei.a
+	$ find / -name liberl_interface.a
 
 * Make sure that's in the path in your makefile's first line, but without the trailing /lib.  E.g.:
 
 	ERL_LIB=/usr/local/lib/erlang/lib/erl_interface-3.6.2
 
+
 ### Make
 
 For Linux and plain Mac/Darwin source install simply do
 
-        make
+        $ make
 
 For a Macports Erlang install on Mac do
 
-        make -f Makefile.Macports
+        $ make -f Makefile.Macports
+
+Depending on the way you built Erlang and/or Lua, you might have to do use sudo, e.g.:
+
+	$ sudo make
+
 
 ### Unit Test
 
 	$ erl -pa ./ebin
 	1> eunit:test(lua_test). 
+
 
 ## Samples
 
@@ -109,7 +134,7 @@ Try this to print "Hello from Lua" from Lua:
 These are the low level function calls as exposed by the Lua C API. 
 The last call prints this into the shell:
 
-	(Lua) => Hello from Lua!
+	Hello from Lua!
 
 Try this to execute a Lua type-to-string call: 
 	
@@ -122,6 +147,42 @@ Try this to execute a Lua type-to-string call:
 	
 This prints the type of the pushed 23 into the shell:
 
-	"number" 
+	{ok, "number"}
 
+## Crashing the VM
 
+You can easily crash the Erlang VM with mistakes both in the c code of this driver,
+and also with errors using the API.
+
+Here is an abridged snip from src/lua_crash_test.erl:
+
+	crash_test() ->
+
+        	{ok, L} = lua:new_state(),
+       		crash_pusher(L,1,100000).
+
+	crash_pusher(L,N,O) ->
+
+        	lua:pushnumber(L, 42),
+        	crash_pusher(L,N+1,O).
+
+Try this bit, running it from the Erlang shell and watch it shutting Erlang down for good. Start the Erlang shell from project root:
+
+	$ erl -pa ./ebin
+	Erlang R13B01 (erts-5.7.2) [source] [smp:2:2] [rq:2] [async-threads:0] [hipe] [kernel-poll:false]
+
+	Eshell V5.7.2  (abort with ^G)
+ 	1> lua_crash_test:crash_test().
+	100000 pushes.
+	200000 pushes.
+	300000 pushes.
+	400000 pushes.
+	500000 pushes.	
+	600000 pushes.
+	700000 pushes.
+	Segmentation fault
+	$  
+
+Again: both bugs in the c source of this driver, as well as errors when using the API -
+ as demonstrated above - can kill the entire Erlang VM.
+ 
