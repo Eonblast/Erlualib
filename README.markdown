@@ -5,7 +5,7 @@ Linked in Lua Driver for Erlang.
 Execute Lua scripts in Erlang the fastest and less secure way. See below 'Crashing the VM'.
 
 This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.
-This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlua-node)
+This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlua-node).
 
 This is a library for embedding Lua into Erlang. 
 It provides a simple interface that is very similar to the Lua C API.
@@ -153,20 +153,20 @@ This prints the type of the pushed 23 into the shell:
 
 ## Crashing the VM
 
-You can easily crash the Erlang VM with mistakes both in the c code of this driver,
-and also with errors using the API.
+You can <b>easily</b> get the Erlang VM crashed both by mistakes in the C code of this driver,
+or by errors you make in using the API. Of course, stack errors are a sure way to get into trouble.
 
 This is a fast way to crash the Erlang process by a Lua stack underrun:
 
 	1> {ok, L} = lua:new_state(), lua:call(L, 1, 0).  
 	Segmentation fault
-	$ <span style='text-decoration:blink;'>|</span>
+	$ |
 
 Try this bit, running it from the Erlang shell and watch it shutting Erlang down for good. 
 
 To test stack overrun, here is an abridged snip from src/lua_crash_test.erl:
 
-	crash_test() ->
+	run() ->
 
         	{ok, L} = lua:new_state(),
        		crash_pusher(L,1,100000).
@@ -192,11 +192,8 @@ to get something like this:
 	600000 pushes.
 	700000 pushes.
 	Segmentation fault
-	$ <span style='text-decoration:blink;'>|</span>  
+	$ |  
 
 Again: both bugs in the c source of this driver, as well as <b>errors when using the API</b> -
- as demonstrated above - can kill the entire Erlang VM. Risking this is exactly not what Erlang is about.
-
- 
- 
- 
+ as demonstrated above - can kill the entire Erlang VM. Risking this is exactly <b>not</b>
+ what Erlang is about.
