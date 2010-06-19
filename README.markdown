@@ -49,7 +49,9 @@ You might be lucky, just try and execute
 
 	$ make
 
-It's really only pathes that need to be fixed of this doesn't work.
+It's really only pathes that need to be fixed of this doesn't work. See 'Pathes', below.
+
+If all worked out, see 'Unit Test' below to check health, then 'Samples'.
 
 
 ### Makefiles
@@ -154,7 +156,15 @@ This prints the type of the pushed 23 into the shell:
 You can easily crash the Erlang VM with mistakes both in the c code of this driver,
 and also with errors using the API.
 
-Here is an abridged snip from src/lua_crash_test.erl:
+This is a fast way to crash the Erlang process by a Lua stack underrun:
+
+	1> {ok, L} = lua:new_state(), lua:call(L, 1, 0).  
+	Segmentation fault
+	$ <span style='text-decoration:blink;'>|</span>
+
+Try this bit, running it from the Erlang shell and watch it shutting Erlang down for good. 
+
+To test stack overrun, here is an abridged snip from src/lua_crash_test.erl:
 
 	crash_test() ->
 
@@ -166,7 +176,8 @@ Here is an abridged snip from src/lua_crash_test.erl:
         	lua:pushnumber(L, 42),
         	crash_pusher(L,N+1,O).
 
-Try this bit, running it from the Erlang shell and watch it shutting Erlang down for good. Start the Erlang shell from project root:
+Which also results in a killed VM. Start the Erlang shell from the project root directory
+to get something like this:
 
 	$ erl -pa ./ebin
 	Erlang R13B01 (erts-5.7.2) [source] [smp:2:2] [rq:2] [async-threads:0] [hipe] [kernel-poll:false]
@@ -181,8 +192,11 @@ Try this bit, running it from the Erlang shell and watch it shutting Erlang down
 	600000 pushes.
 	700000 pushes.
 	Segmentation fault
-	$  
+	$ <span style='text-decoration:blink;'>|</span>  
 
-Again: both bugs in the c source of this driver, as well as errors when using the API -
- as demonstrated above - can kill the entire Erlang VM.
+Again: both bugs in the c source of this driver, as well as <b>errors when using the API</b> -
+ as demonstrated above - can kill the entire Erlang VM. Risking this is exactly not what Erlang is about.
+
+ 
+ 
  
