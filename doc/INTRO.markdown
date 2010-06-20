@@ -111,7 +111,9 @@ as well as any additional parameter needed. In this case, a stack index. The fun
 then uses command/2 to send the work to the port.
 
 		l_ref(L, Index) ->
- 			command(L, {?ERL_LUAL_REF, Index}).
+ 			command(L, {?ERL_LUAL_REF, Index}),
+			receive_valued_response().
+
 
 ##### 3. commands.h
 Also containts all constants you may wish for, also for functions not implemented in this 
