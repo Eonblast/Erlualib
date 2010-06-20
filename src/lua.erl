@@ -40,17 +40,17 @@ new_state() ->
 close(L) ->
     lua_driver:close(L).
 
-dostring(#lua{port=Port}, Code) ->
+dostring(#lua{port=Port}=L, Code) ->
     port_command(Port, term_to_binary({?ERL_LUAL_DOSTRING, Code})),
-    receive_simple_response().
+    receive_simple_response(L).
 
-dofile(#lua{port=Port}, Filename) ->
+dofile(#lua{port=Port}=L, Filename) ->
 	port_command(Port, term_to_binary({?ERL_LUAL_DOFILE, Filename})),
-	receive_simple_response().
+	receive_simple_response(L).
 
 call(L, Args, Results) ->
     command(L, {?ERL_LUA_CALL, Args, Results}),
-    receive_simple_response().
+    receive_simple_response(L).
     
 concat(L, N) ->
     command(L, {?ERL_LUA_CONCAT, N}).
@@ -94,11 +94,11 @@ getfield(L, global, Name) ->
     getglobal(L, Name);
 getfield(L, Index, Name) ->
     command(L, {?ERL_LUA_GETFIELD, Index, Name}),
-    receive_simple_response().
+    receive_simple_response(L).
     
 getglobal(L, Name) ->
     command(L, {?ERL_LUA_GETGLOBAL, Name}),
-    receive_simple_response().
+    receive_simple_response(L).
 
 gettable(L, global, Name) when is_atom(Name) ->
 	gettable(L, global, atom_to_list(Name));
@@ -153,7 +153,7 @@ gettop(L) ->
     
 next(L, Index) ->
 	command(L, {?ERL_LUA_NEXT, Index}),
-	receive_simple_response().
+	receive_simple_response(L).
 
 pop(L) ->
 		{ok, R} = gettop(L),
@@ -197,37 +197,37 @@ push(L, Term) when is_atom(Term) ->
 
 pushboolean(L, Bool) ->
     command(L, {?ERL_LUA_PUSHBOOLEAN, Bool}),
-    receive_simple_response().
+    receive_simple_response(L).
     
 pushinteger(L, Int) when is_integer(Int) ->
     command(L, {?ERL_LUA_PUSHINTEGER, Int}),
-    receive_simple_response().
+    receive_simple_response(L).
 
 pushstring(L, String) when is_list(String) ->
     command(L, {?ERL_LUA_PUSHSTRING, String}),
-    receive_simple_response().
+    receive_simple_response(L).
 
 pushnil(L) ->
     command(L, {?ERL_LUA_PUSHNIL}),
-    receive_simple_response().
+    receive_simple_response(L).
     
 pushnumber(L, Num) when is_number(Num) ->
     command(L, {?ERL_LUA_PUSHNUMBER, Num}),
-    receive_simple_response().
+    receive_simple_response(L).
 
 remove(L, Index) ->
     command(L, {?ERL_LUA_REMOVE, Index}),
-    receive_simple_response().
+    receive_simple_response(L).
     
 setfield(L, global, Name) ->
     setglobal(L, Name);
 setfield(L, Index, Name) ->
     command(L, {?ERL_LUA_SETFIELD, Index, Name}),
-    receive_simple_response().
+    receive_simple_response(L).
 
 setglobal(L, Name) ->
     command(L, {?ERL_LUA_SETGLOBAL, Name}),
-    receive_simple_response().
+    receive_simple_response(L).
 
 toboolean(L, Index) ->
     command(L, {?ERL_LUA_TOBOOLEAN, Index}),
@@ -289,14 +289,17 @@ type_int_to_atom(TypeInt) when is_integer(TypeInt) ->
 command(#lua{port=Port}, Data) ->
     port_command(Port, term_to_binary(Data)).
 
-receive_simple_response() ->
+receive_simple_response(L) -> % L for error diagnosis
     receive
         ok ->
             ok;
         error ->
             {error, lua_error};
         {error, Reason} ->
-            {error, Reason};
+        	case erlang:port_info(L#lua.port) of
+        		undefined -> { error, no_port, Reason, 'The Lua state engine may have crashed or has not been started.' };
+            	_ -> {error, Reason}
+            end;
         Other ->
             {other, Other}
     after ?STD_TIMEOUT ->
