@@ -2,7 +2,9 @@
 
 Linked in Lua Driver for Erlang.
 
-Execute Lua scripts in Erlang the fastest and less secure way. See below 'Crashing the VM'.
+Execute Lua scripts in Erlang the fastest and less secure way. See below, 'Crashing the VM'.
+
+For an intro to the Lua API and the structure of this package see [Intro](http:doc/INTRO.markdown)
 
 This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.
 This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlua-node).
