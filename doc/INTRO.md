@@ -71,11 +71,11 @@ The value you wanted, after the call, is on the top of the Lua 'stack.
 
 ## Library Architecture
 
-ÃThe inner structure of this package is quite straight forward. It offers Erlang functions
+The inner structure of this package is quite straight forward. It offers Erlang functions
 that go over an Erlang 'port' into the C parts and the Lua C libraries.
 
 
-### Call Path
+### Sample Call Path
 
 From Erlang into Lua, a call ventures as follows. Let's look at `gettop()` for an example.
 The following describes something like a callstack:
@@ -191,7 +191,8 @@ by ways of flattened 2-tuples: a type followed by a value, followed by the next 
 Eventually, the call to `driver_output_term()` sends the data over the port to the Erlang function
 `receive_valued_response()` in our initial Erlang function `l_ref()`. 
 
-Congrats!  
+That completes our roundtrip through Erlualib. If you have managed to build your own extension it, congrats! Let us know about it.
+
 SIT PRO.  
 H. Diedrich   
 21 Jun 2010  
