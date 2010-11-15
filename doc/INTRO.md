@@ -9,67 +9,69 @@ This is a brief for people who tinkered with languages before.
 ### Docs
 
 To get some perspective - Lua is *so for embedding* that its C API is described in the main
-[Lua Reference](http://www.lua.org/manual/5.1/manual.html), chapters 3 and 4, *before* the description of the actual Lua standard   
-library in chapter 5.
+[Lua Reference](http://www.lua.org/manual/5.1/manual.html), chapters 3 and 4, *before* the description of the actual Lua standard library in chapter 5.
 
-In *Programming in Lua*, [Chapter 24](http://www.lua.org/pil/24.html) Lua's father Roberto Ierusalimschy warns that  
-*'the API emphasizes flexibility and simplicity, sometimes at the cost of ease of use. Common  
-tasks may involve several API calls. This may be boring, but it gives you full control over  
-all details.'* May I humbly add that Lua has no less of a fascination than Erlang, if for  
+In *Programming in Lua*, [Chapter 24](http://www.lua.org/pil/24.html) Lua's father Roberto Ierusalimschy warns that
+*'the API emphasizes flexibility and simplicity, sometimes at the cost of ease of use. Common
+tasks may involve several API calls. This may be boring, but it gives you full control over
+all details.'* May I humbly add that Lua has no less of a fascination than Erlang, if for
 different reasons. And both languages insist on being spelt with a capital first letter.
 
 
 ### Lua State
 
-The first parameter to most Lua C API functions is a pointer to a **Lua State** object, in  
-effect the *Lua engine* and its *current global state*. You can have more than one. Keep  
+The first parameter to most Lua C API functions is a pointer to a **Lua State** object, in
+effect the *Lua engine* and its *current global state*. You can have more than one. Keep
 that in mind.
 
 ### Lua Stack
 
-Lua uses a **self made pseudo stack** for execution. Most functions the Lua C API exposes are  
+Lua uses a **self made pseudo stack** for execution. Most functions the Lua C API exposes are
 for manipulating this 'stack'. So, 'stack' in this context never means the actual C stack.  
 
 ### Stack Functions
 
-Most functions use an *index* parameter to point *into* the stack and then operate on whatever  
-value is found there. E.g. `void lua_replace (lua_State *L, int index)` moves the *top  
-element* into the position `index`, without shifting any element. Or, `lua_pop(L,n)` pops   
+Most functions use an *index* parameter to point *into* the stack and then operate on whatever
+value is found there. E.g. `void lua_replace (lua_State *L, int index)` moves the *top
+element* into the position `index`, without shifting any element. Or, `lua_pop(L,n)` pops
 n elements from that pseudo stack. 
 
 **You can easily crash Lua and the entire Erlang VM if you get things wrong there.**
 
 ### Pseudo Indices
 
-Presumably to not double functionality, the index parameters are habitually and creatively  
-misused. Instead of pointing into the 'stack' thay can also be used to point anywhere  
-else that makes sense, e.g. into global tables that hold the *environment* values, the  
+Presumably to not double functionality, the index parameters are habitually and creatively
+misused. Instead of pointing into the 'stack' thay can also be used to point anywhere
+else that makes sense, e.g. into global tables that hold the *environment* values, the
 *Registry* and the *global names' table*.
 
-For example, putting the pseudo index `LUA_REGISTRYINDEX` as 'stack index' parameter  
-instead of a benign 1 or 2, will make your function call manipulate the [Lua Registry Table](http://www.lua.org/pil/27.3.1.html),   
-which has nothing to do with the stack at all. So e.g. `lua_rawgeti(L, LUA_REGISTRYINDEX, ref)`   
-will return a value from this *Registry Table* while `lua_rawgeti(L, 1, ref)` will return   
-a value from the *table* at position 1 on the *stack*. In both cases, ref would then make  
-for a pointer into that table then: so the middle parameter points to where the *table* is   
+For example, putting the pseudo index `LUA_REGISTRYINDEX` as 'stack index' parameter
+instead of a benign 1 or 2, will make your function call manipulate the [Lua Registry Table](http://www.lua.org/pil/27.3.1.html),
+which has nothing to do with the stack at all. So e.g. `lua_rawgeti(L, LUA_REGISTRYINDEX, ref)`
+will return a value from this *Registry Table*, while `lua_rawgeti(L, 1, ref)` will return
+a value from the *table* at position 1 on the *stack*. In both cases, ref would then make
+for a pointer into the pinpointed table. So the middle parameter points to where the *table* is
 found, the last parameter ('ref') points to a field *in* that table.
 
-Note that the index parameter is ..used to signal this special case. There is no 'stack'  
-reference parameter that could be replaced, which, well, you could be tempted to expect.
+Note that the index parameter is ..used to signal this special case. There is no 'stack'
+reference parameter that could be replaced; which, well, one could have been tempted to expect.
 
 ### Calling Functions
 
-This recycling of functions is also used to put function calls on the stack. They are basically 
+This recycling of functions is also used to *put function calls on the stack*. They are basically
 taken out of the *'global'* table, which,  among other variables, holds the function names.
-`lua_getfield (L, LUA_GLOBALSINDEX, "print")` pushes the *print function* on the stack for use.
-To execute it, you'd then push something to print right after and then call lua_call(). You
-would use the very same function to access a *field in a table on the stack*: e.g. field 
-'tnirp', *in the table that is at stack position 3*: `lua_getfield (L, 3, "tnirp")`.
+E.g. `lua_getfield (L, LUA_GLOBALSINDEX, "print")` pushes the *print()* function on the stack,
+to stage it for immediate use. To execute it, you'd then push something to print right after
+ and call lua_call().
+
+However, you'd use the very same function, `lua_getfield()` to access a *field in a table on
+the stack*: e.g. field 'tnirp', *in the table that is at stack position 3*: `lua_getfield (L, 3, "tnirp")`. 
+The value you wanted, after the call, is on the top of the Lua 'stack.
 
 
 ## Library Architecture
 
-The inner structure of this package is quite straight forward. It offers Erlang functions
+ÃThe inner structure of this package is quite straight forward. It offers Erlang functions
 that go over an Erlang 'port' into the C parts and the Lua C libraries.
 
 
