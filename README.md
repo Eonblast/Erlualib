@@ -9,7 +9,7 @@ This is a library for **embedding** Lua into Erlang. It provides a
 simple interface that is very similar to the Lua C API. 
 
 For an intro to the Lua API and the structure of this package  
-see [Intro](http://github/Eonblast/Erlualib/doc/INTRO.md).
+see [Intro](https://github.com/Eonblast/Erlualib/blob/master/doc/INTRO.md).
 
 The aim of this library is to enable a high-level embedded-lua API
 for use in **configuration processing and extension coding** for Erlang
