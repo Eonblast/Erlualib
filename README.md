@@ -2,30 +2,37 @@
 
 Linked in Lua Driver for Erlang.
 
-Execute Lua scripts in Erlang the fastest but less secure way.  
+Execute Lua scripts in Erlang the faster but less secure way.  
 See below, 'Crashing the VM'.
 
-This is a library for embedding Lua into Erlang. It provides a  
-simple interface that is very similar to the Lua C API.  
-Ray is also working on a higher level API to simplify things   
-further for the original erl-lua.  
+This is a library for **embedding** Lua into Erlang. It provides a  
+simple interface that is very similar to the Lua C API. 
 
 For an intro to the Lua API and the structure of this package  
-see [Intro](http:doc/INTRO.markdown)
+see [Intro](http://github/Eonblast/Erlualib/doc/INTRO.md).
 
-This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.
+The aim of this library is to enable a high-level embedded-lua API
+for use in **configuration processing and extension coding** for Erlang
+projects. For a real-world example of Darrik's erl-lua in action,
+see [darrikmazey/erlmon](http://github.com/darrikmazey/erlmon).
+
+Ray is also working on a higher level API to simplify things  
+further for the original erl-lua.  
+
+This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.  
 This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlua-node).
 
-**WARNING:** 'This is definitely not fully tested.  
-Still a bunch of work to be done.  
-If you are careful, it should be pretty stable (no promises though).'  
+**WARNING:** 'This is definitely not fully tested. Still a  
+bunch of work to be done. If you are careful, it should be  
+pretty stable (no promises though).'  
 
 <div style='border: 2 px solid red; padding: 20px'>
-Doing as this driver does is discouraged, unless you have good   
-reasons for it. It is safer to use a port, because this eliminates  
+Doing as this driver does is discouraged, unless you have good    
+reasons for it. It is safer to use a port, because this eliminates    
 the danger that an error in the extension can crash the entire   
 Erlang VM.
 </div>
+
 
 
 #### Example:
@@ -36,11 +43,6 @@ Erlang VM.
 	ok  
 	3> lua:gettable(L, global, "t").  
 	[{"a",1},{"c",[{"a","whatever"}]},{"b","test"}]  
-
-The aim of this library is to enable a high-level embedded-lua API  
-for use in configuration processing and extension coding for erlang projects.  
-For a real-world example of Darrik's erl-lua in action, see  
-[darrikmazey/erlmon](http://github.com/darrikmazey/erlmon).  
 
 
 ## Building
