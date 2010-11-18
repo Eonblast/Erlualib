@@ -56,16 +56,16 @@ Erlang VM.
 
 ### Quick
 
-There is Linux, Mac/Darwin and Mac/Macports support.  
-
 You might be lucky, just try and execute  
 
 	$ make
 
-It's really only pathes that need to be fixed of this doesn't work.  
+There is Linux, Mac/Darwin and Mac/Macports support.  
+
+It's really only pathes that need to be fixed if make doesn't work.  
 See 'Pathes', below.  
 
-If all worked out, see 'Unit Test' below to check health, then 'Samples'.  
+If all worked out, see 'Unit Test', below to check health, then 'Samples'.  
 
 
 ### Makefiles
@@ -81,11 +81,11 @@ Calling make will call `uname` to decide to use Makefile.Linux or .Darwin.
 
 ### Make
 
-For **Linux** and plain **Mac/Darwin** build & install simply do
+For **Linux** and **plain Mac** build and install do
 
         $ make
 
-For a **Macports** Erlang build & install on Mac do
+For a **Macports** Erlang build & install do
 
         $ make -f Makefile.Macports
 
@@ -143,24 +143,37 @@ Do the following edits in the appropriate makefile.
 
 	$ erl -pa ./ebin
 	1> eunit:test(lua_test). 
+	
+See src/lua_test.erl for the source of these tests.
 
 
 ## Samples
 
-% Samples
+### File
 
-Two options. One, run the samples by 
-	
+Samples are in src/lua_sample.erl  
+
 	cd src
 	erlc -I ../include lua_sample.erl 
 	erl -pa ../ebin -noinput -noshell -run lua_sample hello -s init stop 
+
+This should give you
+
+	Hello from Lua!
+
+and
+
 	erl -pa ../ebin -noinput -noshell -run lua_sample type -s init stop 
 
-Take a look at src/lua_sample.erl to understand more about the usage of this API.
+should print
 
--- OR --
+	Type of 23: number
 
-Start the Erlang Shell with a path into ebin
+**Take a look at src/lua_sample.erl to understand more about the usage of this API.**
+
+### Shell
+
+Run the samples from the shell, start the Erlang Shell with a path into ebin
 
 	$ erl -pa ./ebin
 
@@ -192,28 +205,46 @@ This prints the type of the number 23 into the shell:
 
 ## Crashing the VM
 
-Now the hazard.
+You can easily get the entire Erlang VM crashed, both by mistakes in  
+the C code of this driver, the Lua VM, Lua extensions, or by errors  
+you make in using this API. 
 
-You can **easily** get the Erlang VM crashed, both by mistakes in the  
-C code of this driver, the Lua VM, Lua extensions, or by errors you   
-make in using this API. 
+Which is exactly why instead of linking drivers in, like this lib,
+the recommended way is a different one: using **ports**, like erlua,  
+<http://gitorious.org/erlua>.
 
-Which is exactly why instead of linking drivers like this in, the recommended
-way is a different one: using **ports**, like erlua, http://gitorious.org/erlua.
+### A Sample
 
-For starters, of course, stack errors are a sure way to get you into trouble.
+Of course, stack errors are a sure way to get you into trouble.
 
-This is a fast and sure way to crash the Erlang process, by a Lua stack underrun:
+Here is a fast and sure way to crash the Erlang process, by a Lua stack  
+*underrun*. Run this from the Erlang shell and watch it shutting Erlang  
+down for good:
+
 
 	1> {ok, L} = lua:new_state(), lua:call(L, 1, 0).  
 	Segmentation fault
 	$ |
 
-Try this bit, run it from the Erlang shell, watch it shutting Erlang down for good. 
 
-To test stack overrun, here is an abridged snip from src/lua_crash_test.erl:
+You can also use
 
-	run() ->
+	erlualib$ erl -pa ./ebin ./crash_tests/ebin
+	1> lua_crash_fast:start().
+
+Which runs this source:
+
+	-module(lua_crash_fast).
+	-export([start/0]).
+
+	start() ->
+
+		{ok, L} = lua:new_state(),
+		lua:call(L, 1, 0). 
+
+To test stack *overrun*, here is an abridged snip from src/lua_crash_test.erl:
+
+	start() ->
 
         	{ok, L} = lua:new_state(),
        		crash_pusher(L,1,100000).
@@ -226,21 +257,24 @@ To test stack overrun, here is an abridged snip from src/lua_crash_test.erl:
 Which also results in a killed VM. Start the Erlang shell from the project  
 root directory to get something like this:
 
-	$ erl -pa ./ebin
+	erlualib$ erl -pa ./ebin ./crash_tests/ebin
 	Erlang R13B01 (erts-5.7.2) [source] [smp:2:2] [rq:2] [async-threads:0] [hipe] [kernel-poll:false]
 
 	Eshell V5.7.2  (abort with ^G)
- 	1> lua_crash_test:crash_test().
+	1> lua_crash_test:start().
 	100000 pushes.
 	200000 pushes.
 	300000 pushes.
 	400000 pushes.
-	500000 pushes.	
+	500000 pushes.
 	600000 pushes.
 	700000 pushes.
-	Segmentation fault
-	$ |  
+	Bus error
+	erlualib$ 
+
 
 **Again:** both bugs in the C source of this driver, as well as **errors  
 when using the API**, as demonstrated above, can kill the entire Erlang VM.  
+
 Risking this is exactly **not** what Erlang is about.
+
