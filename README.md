@@ -2,13 +2,13 @@
 
 Linked in Lua Driver for Erlang.
 
-Execute Lua scripts in Erlang the faster but less secure way.  
+Execute Lua scripts in Erlang the faster but less secure way. 
 See below, 'Crashing the VM'.
 
-This is a library for **embedding** Lua into Erlang. It provides a  
-simple interface that is very similar to the Lua C API. 
+This is a library for **embedding** Lua into Erlang. It provides a
+simple interface that is very similar to the Lua C API.
 
-For an intro to the Lua API and the structure of this package  
+For an intro to the Lua API and the structure of this package
 see [Intro](https://github.com/Eonblast/Erlualib/blob/master/doc/INTRO.md).
 
 The aim of this library is to enable a high-level embedded-lua API
@@ -19,23 +19,21 @@ see [darrikmazey/erlmon](http://github.com/darrikmazey/erlmon).
 Ray is also working on a higher level API to simplify things  
 further for the original erl-lua.  
 
-This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.  
+This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.
 This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlua-node).
 
-**WARNING:** 'This is definitely not fully tested. Still a  
-bunch of work to be done. If you are careful, it should be  
+**WARNING:** 'This is definitely not fully tested. Still a
+bunch of work to be done. If you are careful, it should be
 pretty stable (no promises though).'  
 
-<div style='border: 2 px solid red; padding: 20px'>
 Doing as this driver does is discouraged, unless you have good    
 reasons for it. It is safer to use a port, because this eliminates    
-the danger that an error in the extension can crash the entire   
-Erlang VM.
-</div>
+the danger that an error in the extension can crash the entire
+Erlang VM.  
 
 
 
-#### Example:
+### Example:
 
 	1> {ok, L} = lua:new_state().  
 	{ok,{lua,#Port<0.771>}}  
