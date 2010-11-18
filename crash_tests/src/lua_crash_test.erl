@@ -1,11 +1,10 @@
 -module(lua_crash_test).
+-export([start/0]).
 -import(lua).
-
--include_lib("eunit/include/eunit.hrl").
 
 % Brief demo of sure crash of the Erlang virtual machine.
 % Pushing to stack until dead.
-crash_test() ->
+start() ->
 
 	{ok, L} = lua:new_state(),
 	crash_pusher(L,1,100000). 

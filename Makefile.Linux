@@ -10,6 +10,7 @@ ERL=/usr/bin/erl
 LIB=lib/liberlua.so
 
 ERLMODS=$(patsubst src/%.erl,ebin/%.beam,$(wildcard src/*.erl))
+CRASHER=$(patsubst crash_tests/src/%.erl,crash_tests/ebin/%.beam,$(wildcard crash_tests/src/*.erl))
 OBJECTS=$(patsubst c_src/%.c,build/%.o,$(wildcard c_src/*.c))
 
 all: $(LIB) $(ERLMODS)
@@ -20,6 +21,9 @@ build/%.o: c_src/%.c
 ebin/%.beam: src/%.erl
 	$(ERL) -make
 
+crash_tests/ebin/%.beam: crash_tests/src/%.erl
+	$(ERL)c -o crash_tests/ebin $<
+	
 $(LIB): $(OBJECTS)
 	$(GCC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -o $(LIB) $(OBJECTS) $(STATICLIBS)
 
@@ -30,3 +34,5 @@ clean:
 	rm -f ebin/*.beam
 	rm -f build/*.o
 	rm -f lib/liberlua.so
+	rm -f src/*.beam
+	rm -f crash_test/*.beam

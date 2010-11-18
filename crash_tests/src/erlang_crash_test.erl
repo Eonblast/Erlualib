@@ -3,7 +3,7 @@
 
 start() ->
 
-	io:format("Stack overrun in pure Erlang ..."),
+	io:format("Stack overrun attempt in pure Erlang ..."),
 	
 	re(0).
 	
