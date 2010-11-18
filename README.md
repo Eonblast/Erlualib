@@ -120,8 +120,8 @@ Do the following edits in the appropriate makefile.
         $ find / -name erl_driver.h
         $ find / -name ei.h
        
-        Note that especially with Macports you may find multiple identical
-	 versions.
+        Note that especially with Macports you may find multiple identical  
+        versions.
 
 * Add their pathes to the second line in your make file. E.g. add to the  
  line beginning fith CFLAGS:
@@ -144,7 +144,7 @@ Do the following edits in the appropriate makefile.
 	$ erl -pa ./ebin
 	1> eunit:test(lua_test). 
 	
-See src/lua_test.erl for the source of these tests.
+See src/lua_test.erl for the source of these tests, it's quite illuminating.
 
 
 ## Samples
