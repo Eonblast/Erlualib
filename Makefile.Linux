@@ -9,11 +9,14 @@ ERL=/usr/bin/erl
 
 LIB=lib/liberlua.so
 
+# note: only the main files shall go into ebin, for less clutter
 ERLMODS=$(patsubst src/%.erl,ebin/%.beam,$(wildcard src/*.erl))
-CRASHER=$(patsubst crash_tests/src/%.erl,crash_tests/ebin/%.beam,$(wildcard crash_tests/src/*.erl))
+CRASHER=$(patsubst samples/crash/%.erl,samples/crash/%.beam,$(wildcard samples/crash/*.erl))
+HELLO=$(patsubst samples/hello/%.erl,samples/hello/%.beam,$(wildcard samples/hello/*.erl))
+TESTS=$(patsubst tests/%.erl,tests/%.beam,$(wildcard tests/*.erl))
 OBJECTS=$(patsubst c_src/%.c,build/%.o,$(wildcard c_src/*.c))
 
-all: $(LIB) $(ERLMODS) $(CRASHER)
+all: $(LIB) $(ERLMODS) $(HELLO) $(TESTS) $(CRASHER)
 
 build/%.o: c_src/%.c
 	$(GCC) $(CFLAGS) -o $@ -c $<
@@ -21,8 +24,14 @@ build/%.o: c_src/%.c
 ebin/%.beam: src/%.erl
 	$(ERL) -make
 
-crash_tests/ebin/%.beam: crash_tests/src/%.erl
-	$(ERL)c -o crash_tests/ebin $<
+samples/crash/%.beam: samples/crash/%.erl
+	$(ERL)c -o samples/crash $<
+	
+samples/hello/%.beam: samples/hello/%.erl
+	$(ERL)c -I include -o samples/hello $<
+	
+tests/%.beam: tests/%.erl
+	$(ERL)c -o tests $<
 	
 $(LIB): $(OBJECTS)
 	$(GCC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -o $(LIB) $(OBJECTS) $(STATICLIBS)
@@ -32,7 +41,15 @@ test: ebin/lua_test.beam
 
 clean:
 	rm -f ebin/*.beam
+	rm -f ebin/*.dump
 	rm -f build/*.o
+	rm -f build/*.so
 	rm -f lib/liberlua.so
 	rm -f src/*.beam
-	rm -f crash_test/*.beam
+	rm -f src/*.dump
+	rm -f samples/hello/*.beam
+	rm -f samples/hello/*.dump
+	rm -f samples/crash/*.beam
+	rm -f samples/crash/*.dump
+	rm -f tests/*.beam
+	rm -f tests/*.dump
