@@ -141,14 +141,14 @@ Do the following edits in the appropriate makefile.
 	$ erl -pa ./ebin
 	1> eunit:test(lua_test). 
 	
-See [src/lua_test.erl] for the source of these tests, it's quite illuminating.
+See <src/lua_test.erl> for the source of these tests, it's quite illuminating.
 
 
 ## Samples
 
 ### File
 
-Samples are in [src/lua_sample.erl]  
+Samples are in <src/lua_sample.erl>
 
 	cd src
 	erlc -I ../include lua_sample.erl 
@@ -166,7 +166,7 @@ should print
 
 	Type of 23: number
 
-**Take a look at [src/lua_sample.erl] to understand more about the usage of this API.**
+**Take a look at <src/lua_sample.erl> to understand more about the usage of this API.**
 
 ### Shell
 
