@@ -5,7 +5,8 @@ The fewer port calls, the faster the code.
 To gain optimal speed, you want to program directly against the Lua C API.
 This package can be used as starting point to do this. But you have to touch
 a lot of files to implement one new function on the deepest level, for
-the minimal number of port calls.
+the minimal number of port calls. As we will see, there is no real in-between.
+You either implement on the Erlang side or in C.
 
 It is easier, faster and more secure to use the low level functions exposed by this 
 package, which mimick the Lua C API functions on the Erlang side. But it
@@ -57,8 +58,8 @@ NOT system processes and they do not switch system context. Erlang
 processes switch very fast and Erlang messages are sent and received very
 fast, but not as fast as Erlang or C function calls.
 
-The `functions process()` and `receive_return()` in `c_src/commands.c` and 
-`src/lua.erl` are likewise called three times. Oviously, only one time should
+The functions `process()` and `receive_return()` in **c_src/commands.c** and 
+**src/lua.erl** are likewise called three times. Oviously, only one time should
 be necessary.
 
 The sample should have compiled when you did make. You could execute it like so:
@@ -83,7 +84,7 @@ It should also give you:
 
 ## 3: Yet More Hidden - lua:port_print()
 
-We can also use `lua:port_print()`, like so:
+We can also use **lua:port_print()**, like so:
 
 
 	$ erl -pa ./ebin
@@ -92,7 +93,7 @@ We can also use `lua:port_print()`, like so:
 
 But again, the way this is implemented, it makes three port calls. 
 
-See `src/lua.erl`:
+See **src/lua.erl:**
 
 	-export([port_print/2]).
 	...	
@@ -109,7 +110,7 @@ the new function port_print().
 ### 4: Optimized In C Against Lua C API
 
 The only true optimization is an implementation as seen with `lua:c_print()`,
-which in `src/lua.erl` looks like this:
+which in **src/lua.erl** looks like this:
 
 	c_print_variable(L, Name) ->
 	
@@ -121,13 +122,13 @@ of making only **one port call**, resulting in only one send and one receive.
 
 The implementation of the actual print is on the C side, directly against
 the Lua C API, and not, as all previous samples, against the Erlang functions
-that mimick it -- at the cost of a port call for every function.
+that mimick it.
 
 The actual implementation for this function now is in 'c_src/commands.c`.
 It is implemented in C, which is the price we knew we'd had to pay.
 The slower versions above of course all got away **without** touching any **C**.
 
-`c_src/commands.c`:
+**c_src/commands.c:**
 
 	void
 	erl_lua_high_print(lua_drv_t *driver_data, char *buf, int index)
@@ -148,7 +149,7 @@ Not only is the not too transparent C source above needed, with its
 additional burden of possible C errors, but you also need to extend **five**
 other files to make the above C function accessible from Erlang:
 
-1. `src/lua.erl`
+1. **src/lua.erl**
 
 		-export([c_print/2]).
 	
@@ -158,25 +159,25 @@ other files to make the above C function accessible from Erlang:
 		    command(L, {?ERL_LUAC_PRINT, String}),
     		receive_return(L).
 
-2. `include/lua_api.hrl`
+2. **include/lua_api.hrl**
 
 		-define(ERL_LUAC_PRINT,             200).
 
-3. `c_src/commands.h`
+3. **c_src/commands.h**
 
 		#define ERL_LUAC_PRINT             200
 
-4. `c_src/erlua.h`
+4. **c_src/erlua.h**
 
 		void erl_luac_print (lua_drv_t *driver_data, char *buf, int index);
 
-5. `c_src/erlua.c`
+5. **c_src/erlua.c**
 
 		case ERL_LUAC_PRINT:
 			erl_luac_print(driver_data, buf, index);
 			break;
 
-6. `c_src/commands.c`
+6. **c_src/commands.c**
 
 	as shown above
 
@@ -189,6 +190,9 @@ other files to make the above C function accessible from Erlang:
 4. The C header declaration for that function
 5. The switch that maps the C constant on the right C function
 6. The implementation of the C function
+
+It's not a lot that has to be added to each file, once you know your way around 
+It
 
 
 ### Conclusion
