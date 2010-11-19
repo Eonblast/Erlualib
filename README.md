@@ -3,7 +3,7 @@
 This is a port driver library for **embedding** Lua into Erlang.
 It provides a simple interface that is very similar to the Lua C API
 and executes Lua scripts in Erlang the faster but less secure way.
-See below, 'Crashing the VM' and 'Comparing Erlang-Lua Packages'.
+See below, '[Crashing the VM](#crashing)' and 'Comparing Erlang-Lua Packages'.
 
 Read on to learn about using this library, for an intro to the
 inner workings and the Lua C API, see
@@ -23,11 +23,11 @@ further for the original erl-lua.
 **WARNING: This is not fully tested. Still a bunch of work to be done.
 If you are careful, it should be pretty stable.**
 
-Doing as this library does is discouraged, unless you have good reasons
-for it. This library is an *embedded driver port*. It is safer to use a 
-*c node port*, because that eliminates the danger that an
-error in the Lua port can crash the entire Erlang VM.  
-See below, 'Crashing the VM' and 'Comparing Erlang-Lua Packages'.
+Doing as this library does is somewhat discouraged, unless you have 
+good reasons for it. This library is an *embedded driver port*. It is
+safer to use a  *c node port*, because that eliminates the danger that
+an error in the Lua port can crash the entire Erlang VM. See below, 
+'Crashing the VM' and 'Comparing Erlang-Lua Packages'.
 
 
 ### Example:
@@ -305,7 +305,7 @@ NIF will bring the emulator down too**."*
 
 <http://www.erlang.org/doc/tutorial/nif.html>
 
-## Crashing the VM
+## <a name=crashing>Crashing the VM</a>
 
 You can easily get the entire Erlang VM crashed, both by mistakes in  
 the C code of this driver, the Lua VM, Lua extensions, or by errors  
@@ -380,4 +380,6 @@ when using the API**, as demonstrated above, can kill the entire Erlang VM.
 
 Risking this is exactly **not** what Erlang is about.
 
+---
 
+Formatting: <http://daringfireball.net/projects/markdown/syntax>
