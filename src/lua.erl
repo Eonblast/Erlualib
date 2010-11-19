@@ -617,7 +617,7 @@ c_print(L, String) ->
 
 c_print_variable(L, Name) ->
 
-    command(L, {?ERL_LUA_HIGH_PRINT_VARIABLE, Name}),
+    command(L, {?ERL_LUAC_PRINT_VARIABLE, Name}),
     receive_return(L).
 
 

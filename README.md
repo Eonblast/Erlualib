@@ -279,9 +279,9 @@ c_src/commands.c.
 
 #### NIF
 
-Especially with Lua, it might make sense to reflect about using
-[NIFs](http://www.erlang.org/doc/tutorial/nif.html). Because you
-might find that you always only call a handfull or even only one
+It might make sense to look at
+[NIFs](http://www.erlang.org/doc/tutorial/nif.html) if you 
+find that you always only call a handfull or even only one
 Lua-implemented function from Erlang. 
 
 It looks like there is no NIF approach out there today.
