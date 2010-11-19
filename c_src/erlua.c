@@ -177,11 +177,11 @@ process(ErlDrvData handle, ErlIOVec *ev)
 
    /* Higher Level Lua C API 'Aux' functions.  */
   
-  case ERL_LUA_HIGH_PRINT:
+  case ERL_LUAC_PRINT:
 	erl_lua_high_print(driver_data, buf, index);
 	break;
 
-  case ERL_LUA_HIGH_PRINT_VARIABLE:
+  case ERL_LUAC_PRINT_VARIABLE:
 	erl_lua_high_print_variable(driver_data, buf, index);
 	break;
 

@@ -386,14 +386,14 @@ when using the API**, as demonstrated above, can kill the entire Erlang VM.
 Risking this is exactly **not** what Erlang is about.
 
 
--------------------------------------------------------------------
-File        : README.md
-Description : Erlang Embedded Lua Port Driver
-Authors     : Ray Morgan, Darrik Mazey, Henning Diedrich
-Copyright   : (c) 2010 Eonblast Corporation for this fork
-License     : MIT for this fork
-Created     : 11 Apr 2009 Ray C. Morgan <@raycmorgan>
-Changed     : 20 Nov 2010 H. Diedrich <hd2010@eonblast.com>
--------------------------------------------------------------------
+	-------------------------------------------------------------------
+	File        : README.md
+	Description : Erlang Embedded Lua Port Driver
+	Authors     : Ray Morgan, Darrik Mazey, Henning Diedrich
+	Copyright   : (c) 2010 Eonblast Corporation for this fork
+	License     : MIT for this fork
+	Created     : 11 Apr 2009 Ray C. Morgan <@raycmorgan>
+	Changed     : 20 Nov 2010 H. Diedrich <hd2010@eonblast.com>
+	-------------------------------------------------------------------
 
 Formatting: <http://daringfireball.net/projects/markdown/syntax>

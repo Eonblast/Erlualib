@@ -154,5 +154,5 @@
 
 %% Lua Language Function Emulation
 
--define(ERL_LUA_HIGH_PRINT,          200).
--define(ERL_LUA_HIGH_PRINT_VARIABLE, 201).
+-define(ERL_LUAC_PRINT,             200).
+-define(ERL_LUAC_PRINT_VARIABLE,    201).

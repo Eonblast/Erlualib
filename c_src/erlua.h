@@ -37,8 +37,8 @@ extern "C" {
   void erl_lual_dostring (lua_drv_t *driver_data, char *buf, int index);
   void erl_lual_dofile (lua_drv_t *driver_data, char *buf, int index);
 
-  void erl_lua_high_print (lua_drv_t *driver_data, char *buf, int index);
-  void erl_lua_high_print_variable (lua_drv_t *driver_data, char *buf, int index);
+  void erl_luac_print (lua_drv_t *driver_data, char *buf, int index);
+  void erl_luac_print_variable (lua_drv_t *driver_data, char *buf, int index);
   
   void erl_lua_no_command (lua_drv_t *driver_data);
 

@@ -603,7 +603,7 @@ port_print(L, String) ->
 
 c_print(L, String) ->
 
-    command(L, {?ERL_LUA_HIGH_PRINT, String}),
+    command(L, {?ERL_LUAC_PRINT, String}),
     receive_return(L).
 
 	% This is faster than port_print, because it handles
