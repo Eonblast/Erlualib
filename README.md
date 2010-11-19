@@ -2,34 +2,36 @@
 
 Linked in Lua Driver for Erlang.
 
-Execute Lua scripts in Erlang the faster but less secure way. 
-See below, 'Crashing the VM'.
+Execute Lua scripts in Erlang the faster but less secure way.
+See below, 'Crashing the VM' and 'Comparing Erlang-Lua Packages'
 
 This is a library for **embedding** Lua into Erlang. It provides a
 simple interface that is very similar to the Lua C API.
 
-For an intro to the Lua API and the structure of this package
-see [Intro](https://github.com/Eonblast/Erlualib/blob/master/doc/INTRO.md).
-
-The aim of this library is to enable a high-level embedded-lua API
-for use in **configuration processing and extension coding** for Erlang
-projects. For a real-world example of Darrik's erl-lua in action,
-see [darrikmazey/erlmon](http://github.com/darrikmazey/erlmon).
-
-Ray is also working on a higher level API to simplify things  
-further for the original erl-lua.  
+Read on to learn about using this library,
+for an intro to the Lua C API, how you could extend this library, and how it
+works internally, see [Intro](https://github.com/Eonblast/Erlualib/blob/master/doc/INTRO.md).
 
 This is a fork of Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua) Erlang-Lua driver.
-This fork here goes via Darrik Mazey's [fork](http://github.com/darrikmazey/erlua-node).
+The aim of this library is to enable a high-level embedded-lua API
+for use in **configuration processing and extension coding** for Erlang
+projects. 
+
+This fork here goes via Darrik Mazey's 
+[fork](http://github.com/darrikmazey/erlua-node).
+For a real-world example of Darrik's erl-lua in action,
+see [darrikmazey/erlmon](http://github.com/darrikmazey/erlmon).
+Ray is also working on a higher level API to simplify things
+further for the original erl-lua.
 
 **WARNING:** 'This is definitely not fully tested. Still a
 bunch of work to be done. If you are careful, it should be
 pretty stable (no promises though).'  
 
-Doing as this driver does is discouraged, unless you have good    
-reasons for it. It is safer to use a port, because this eliminates    
-the danger that an error in the extension can crash the entire
-Erlang VM.  
+Doing as this library does is discouraged, unless you have good reasons for
+it. This library is a *driver*. It is safer to use a *port*, 
+because this eliminates the danger that an
+error in the extension can crash the entire Erlang VM.  
 
 
 
@@ -201,6 +203,93 @@ This prints the type of the number 23 into the shell:
 	{ok, "number"}
 
 
+
+## Comparing Erlang-Lua Packages
+
+We found two approaches,
+
+* Cyril Romains' [erlua](http://gitorious.org/erlua): 
+  *"erlua is aimed to enable seamless interoperability between Erlang and
+  the Lua programming language."*
+* Ray Morgan's [erl-lua](http://github.com/raycmorgan/erl-lua): 
+ *"The aim of this library is to enable a high-level embedded-lua API
+ for use in configuration processing and extension coding for Erlang
+ projects."*
+
+This package is based on the latter.
+
+
+#### C Node Port
+
+Cyril's *erlua* implements a more secure 
+[C Node](http://www.erlang.org/doc/tutorial/cnode.html)
+that accepts and handles the calls for Lua and cannot crash the 
+Erlang VM when it goes down.
+
+	*"From Erlang's point of view, the C node is treated like a
+	normal Erlang node." 
+	
+	<http://www.erlang.org/doc/tutorial/cnode.html>
+
+There is more high-level source in *erlua* that helps looking at the Lua
+side, the Lua Stack, and Lua Variables.
+
+
+#### Embedded Port Driver
+
+Ray's erl-lua is lower level 
+[embedded port driver](http://www.erlang.org/doc/tutorial/c_portdriver.html),
+which is faster but less secure.
+
+	*"A port driver is a linked in driver, that is accessible as a
+	port from an Erlang program. It is a shared library (SO in
+	Unix, DLL in Windows), with special entry points. The Erlang
+	runtime calls these entry points, when the driver is started
+	and when data is sent to the port. The port driver can also
+	send data to Erlang."*
+
+	*"Since a port driver is dynamically linked into the emulator
+	process, this is the fastest way of calling C-code from Erlang.
+	Calling functions in the port driver requires no context
+	switches. But it is also the least safe, because a **crash in the
+	port driver brings the emulator down too**."*
+	
+	<http://www.erlang.org/doc/tutorial/c_portdriver.html>
+
+
+#### NIF
+
+Especially with Lua, it might make sense to reflect about using
+[NIFs](http://www.erlang.org/doc/tutorial/nif.html). Because you
+might find that you always only call a handfull or even only one
+Lua-implemented function from Erlang. 
+
+It looks like there is no NIF approach out there today.
+
+
+	*"NIFs where introduced in R13B03 as an experimental feature. It
+	is a simpler and more efficient way of calling C-code than
+	using port drivers. NIFs are most suitable for synchronous
+	functions like foo and bar in the example, that does some
+	relatively short calculations without side effects and return
+	the result."*
+
+	*"A NIF (Native Implemented Function) is a function that is
+	implemented in C instead of Erlang. NIFs appear as any other
+	functions to the callers. They belong to a module and are
+	called like any other Erlang functions. The NIFs of a module
+	are compiled and linked into a dynamic loadable shared library
+	(SO in Unix, DLL in Windows). The NIF library must be loaded in
+	runtime by the Erlang code of the module."*
+
+	*"Since a NIF library is dynamically linked into the emulator
+	process, this is the fastest way of calling C-code from Erlang
+	(alongside port drivers). Calling NIFs requires no context
+	switches. But it is also the least safe, because a **crash in a
+	NIF will bring the emulator down too**."*
+
+	<http://www.erlang.org/doc/tutorial/nif.html>
+
 ## Crashing the VM
 
 You can easily get the entire Erlang VM crashed, both by mistakes in  
@@ -275,4 +364,5 @@ root directory to get something like this:
 when using the API**, as demonstrated above, can kill the entire Erlang VM.  
 
 Risking this is exactly **not** what Erlang is about.
+
 
