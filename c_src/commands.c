@@ -373,7 +373,7 @@ erl_lual_dostring(lua_drv_t *driver_data, char *buf, int index)
   
   code = decode_string(buf, &index);
   
-  if (!luaL_dostring(driver_data->L, code))
+  if (!luaL_dostring(driver_data->L, code)) // sic '!'
     reply_ok(driver_data);
   else
     reply_error(driver_data);
@@ -386,7 +386,7 @@ erl_lual_dofile(lua_drv_t *driver_data, char *buf, int index)
 
 	code = decode_string(buf, &index);
 	
-	if (!luaL_dofile(driver_data->L, code))
+	if (!luaL_dofile(driver_data->L, code)) // sic '!'
 		reply_ok(driver_data);
 	else
 		reply_error(driver_data);
@@ -405,7 +405,7 @@ erl_lual_dofile(lua_drv_t *driver_data, char *buf, int index)
  * Call from Erlang with lua:print(L, Text).
  */
 void
-erl_lua_high_print(lua_drv_t *driver_data, char *buf, int index)
+erl_luac_print(lua_drv_t *driver_data, char *buf, int index)
 {
 	lua_State *L = driver_data->L;
 	char *str	 = decode_string(buf, &index);
@@ -425,7 +425,7 @@ erl_lua_high_print(lua_drv_t *driver_data, char *buf, int index)
  * Call from Erlang with lua:print_variable(L, VarName).
  */
 void
-erl_lua_high_print_variable(lua_drv_t *driver_data, char *buf, int index)
+erl_luac_print_variable(lua_drv_t *driver_data, char *buf, int index)
 {
 	lua_State *L = driver_data->L;
 	char *str	 = decode_string(buf, &index);

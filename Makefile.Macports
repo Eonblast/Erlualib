@@ -12,10 +12,11 @@ LIB=lib/liberlua.so
 ERLMODS=$(patsubst src/%.erl,ebin/%.beam,$(wildcard src/*.erl))
 CRASHER=$(patsubst samples/crash/%.erl,samples/crash/%.beam,$(wildcard samples/crash/*.erl))
 HELLO=$(patsubst samples/hello/%.erl,samples/hello/%.beam,$(wildcard samples/hello/*.erl))
+LOGIC=$(patsubst samples/logic/%.erl,samples/logic/%.beam,$(wildcard samples/logic/*.erl))
 TESTS=$(patsubst tests/%.erl,tests/%.beam,$(wildcard tests/*.erl))
 OBJECTS=$(patsubst c_src/%.c,build/%.o,$(wildcard c_src/*.c))
 
-all: $(LIB) $(ERLMODS) $(HELLO) $(TESTS) $(CRASHER)
+all: $(LIB) $(ERLMODS) $(HELLO) $(LOGIC) $(TESTS) $(CRASHER)
 
 build/%.o: c_src/%.c
 	$(GCC) $(CFLAGS) -o $@ -c $<
@@ -28,6 +29,9 @@ samples/crash/%.beam: samples/crash/%.erl
 	
 samples/hello/%.beam: samples/hello/%.erl
 	$(ERL)c -I include -o samples/hello $<
+	
+samples/logic/%.beam: samples/logic/%.erl
+	$(ERL)c -I include -o samples/logic $<
 	
 tests/%.beam: tests/%.erl
 	$(ERL)c -o tests $<
