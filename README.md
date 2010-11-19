@@ -223,12 +223,14 @@ implemented in C but behaving like an Erlang node,
 which cannot crash the Erlang VM when it goes down.
 
 *"From Erlang's point of view, the C node is treated like a
-normal Erlang node." 
+normal Erlang node."*
 
 <http://www.erlang.org/doc/tutorial/cnode.html>
 
-There is more high-level source in *erlua* that helps looking at the Lua
-side, the Lua Stack, and Lua Variables.
+There seems to be be much more high-level source in *erlua* that
+helps looking at the Lua side, the Lua Stack, and Lua Variables.
+You can easily execute strings as Lua source and call Lua functions
+remotely. However, that was not what we needed.
 
 
 #### Embedded Port Driver
@@ -251,6 +253,23 @@ switches. But it is also the least safe, because a **crash in the
 port driver brings the emulator down too**."*
 
 <http://www.erlang.org/doc/tutorial/c_portdriver.html>
+
+erl-lua seemed to be lower level and mimicking the Lua C API,
+providing an Erlang function call for most of the functions in
+the basic Lua C API. That creates opportunity to corrupt the
+Lua 'Stack' (see [Intro](doc/INTRO.md)) and more effort and 
+much more attention is needed to write even a simple 
+'hello world' call. But for being flatter it may be more 
+robust, with less potential for errors in the C parts
+when extending it. Plus, we wanted to optimize for performance
+and cut out the intra-node communication that results into
+a system context switch for every call.
+
+We are introducing a higher level in our fork of erl-lua that
+reduces the number of port calls and bundles functionality 
+on the C side, programmed directly against the Lua C API,
+to gain further speed. For an example, see c_print() in
+c_src/commands.c.
 
 
 #### NIF
