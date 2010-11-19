@@ -3,7 +3,8 @@
 This is a port driver library for **embedding** Lua into Erlang.
 It provides a simple interface that is very similar to the Lua C API
 and executes Lua scripts in Erlang the faster but less secure way.
-See below, '[Crashing the VM](#crashing)' and 'Comparing Erlang-Lua Packages'.
+See below, '[Crashing the VM](#crashing)' and 
+'[Comparing Erlang-Lua Packages](#comparing)'.
 
 Read on to learn about using this library, for an intro to the
 inner workings and the Lua C API, see
@@ -26,8 +27,9 @@ If you are careful, it should be pretty stable.**
 Doing as this library does is somewhat discouraged, unless you have 
 good reasons for it. This library is an *embedded driver port*. It is
 safer to use a  *c node port*, because that eliminates the danger that
-an error in the Lua port can crash the entire Erlang VM. See below, 
-'Crashing the VM' and 'Comparing Erlang-Lua Packages'.
+an error in the Lua port can crash the entire Erlang VM.
+See below, '[Crashing the VM](#crashing)' and 
+'[Comparing Erlang-Lua Packages](#comparing)'.
 
 
 ### Example:
@@ -199,7 +201,7 @@ This prints the type of the number 23 into the shell:
 
 
 
-## Comparing Erlang-Lua Packages
+## Comparing Erlang-Lua Packages<a name=comparing></a>
 
 We found two approaches,
 
