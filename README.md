@@ -13,7 +13,6 @@ inner workings and the Lua C API, see
 * This is a fork of Ray Morgan's
 [erl-lua](http://github.com/raycmorgan/erl-lua) 
 Erlang-Lua driver.
-
 * This fork here goes via Darrik Mazey's 
 [fork](http://github.com/darrikmazey/erlua-node).
 * For a real-world example of Darrik's erl-lua in action,
@@ -28,8 +27,9 @@ Doing as this library does is somewhat discouraged, unless you have
 good reasons for it. This library is an *embedded driver port*. It is
 safer to use a  *c node port*, because that eliminates the danger that
 an error in the Lua port can crash the entire Erlang VM.
-See below, '[Crashing the VM](#crashing)' and 
-'[Comparing Erlang-Lua Packages](#comparing)'.
+See below,  
+[Comparing Erlang-Lua Packages](#comparing) and
+[Crashing the VM](#crashing).
 
 
 ### Example:
@@ -44,71 +44,69 @@ See below, '[Crashing the VM](#crashing)' and
 
 ## Building
 
-* Quick
-* Makefiles
-* Pathes
-* Make
-* Unit Test
+> * Quick
+> * Make
+> * Pathes
+> * Unit Test
 
 
 ### Quick
 
-You might be lucky, just try and execute  
+You will probably have to adjust pathes, but you might be lucky,
+just try and execute  
 
 	$ make
 
-There is Linux, Mac/Darwin and Mac/Macports support.  
-
-It's really only pathes that need to be fixed if make doesn't work.  
-See 'Pathes', below.  
-
 If all worked out, see 'Unit Test', below to check health, then 'Samples'.  
 
-
-### Makefiles
-
-There are three Makefiles provided  
-
-	* Linux:        Makefile.Linux
-	* Mac/Darwin:   Makefile.Darwin
-	* Mac/Macports: Makefile.Macports
-
-Calling make will call `uname` to decide to use Makefile.Linux or .Darwin.
+If it didn't, read on for the right Make and how to set pathes.
 
 
 ### Make
 
-For **Linux** and **plain Mac** build and install do
+There are three Makefiles provided  
+
+> * `Linux:        Makefile.Linux`
+> * `Mac/Darwin:   Makefile.Darwin`
+> * `Mac/Macports: Makefile.Macports`
+
+Calling make will call `uname` to decide to use Makefile.Linux or .Darwin.
+
+* For **Linux** and **plain Mac** build and install do
 
         $ make
 
-For a **Macports** Erlang build & install do
+* For a **Macports** Erlang build and install do
 
         $ make -f Makefile.Macports
 
 Depending on the way you built Erlang and/or Lua, you might have to do  
 use sudo, e.g.:
 
-	$ sudo make
+		$ sudo make
+or
 
-If you get errors like '''error: ei.h: No such file or directory''' you   
-need to set the pathes, see below
+		$ sudo make -f Makefile.Macports
+
+Very likely, you'll get errors like **error: ei.h: No such file or
+directory**, and you need to set the pathes like so:
 
 
 ### Pathes
 
-Pathes in the make files may need to be adjusted for version numbers  
-and non-standard install prefixes.  
-Do the following edits in the appropriate makefile.  
+Pathes in the make files may need to be adjusted for version numbers, 
+and non-standard install prefixes.
+Do the following edits in the makefile appropriate for you:  
 
-* Check for the erl_interface version number of your Erlang installation:
+* Check for the **erl_interface version number** of your Erlang
+  installation:
 
         $ ls /usr/lib/erlang/lib
-        or
+or
         $ ls /opt/local/lib/erlang/lib
 
-* Put that version number in the path in first line of your makefile. 
-  (Don't add '/lib')  E.g.:
+* Put that version number in the path in the 
+  **first line** of your makefile. (But don't add '/lib') E.g.:
 
         ERL_LIB=/usr/local/lib/erlang/lib/erl_interface-3.6.2
 
@@ -117,11 +115,11 @@ Do the following edits in the appropriate makefile.
         $ find / -name erl_driver.h
         $ find / -name ei.h
        
-        Note that especially with Macports you may find multiple identical  
-        versions.
+        Note that especially with Macports you may find multiple,
+        identical versions.
 
-* Add their pathes to the second line in your make file. E.g. add to the  
- line beginning fith CFLAGS:
+* Add their pathes to the **second line** in your make file. E.g. add
+  to the line beginning fith CFLAGS:
 
         -I/usr/local/lib/erl/usr/include -I/usr/local/lib/erlang/lib/erl_interface-3.6.2/include
 
@@ -130,10 +128,15 @@ Do the following edits in the appropriate makefile.
         $ find / -name libei.a
         $ find / -name liberl_interface.a
 
-* Make sure that's in the path in your makefile's first line, but without  
-  the trailing /lib.  E.g.:
+* Make sure that's **in the path** in your makefile's **first line**,
+  but **without** the trailing /lib.  E.g.:
 
         ERL_LIB=/usr/local/lib/erlang/lib/erl_interface-3.6.2
+
+
+Try make again.
+
+If you have Windows instructions, please add them and push.
 
 
 ### Unit Test
