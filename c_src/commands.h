@@ -1,3 +1,6 @@
+/* NOTE: This list covers all Lua 5.1 C API functions. 
+		 Only some are implemented in this library.   */
+
 /* General Lua API */
 
 #define ERL_LUA_ALLOC              1
@@ -88,7 +91,6 @@
 #define ERL_LUA_XMOVE              86
 #define ERL_LUA_YIELD              87
 
-
 /* Lua Auxiliary Library */
 
 #define ERL_LUAL_ADDCHAR           88
@@ -137,6 +139,12 @@
 #define ERL_LUAL_TYPERROR          131
 #define ERL_LUAL_UNREF             132
 #define ERL_LUAL_WHERE             133
+
+/* Lua Language Function Emulation */
+
+#define ERL_LUA_HIGH_PRINT          200
+#define ERL_LUA_HIGH_PRINT_VARIABLE 201
+/* Atoms */
 
 #define ATOM_OK driver_mk_atom("ok")
 #define ATOM_ERROR driver_mk_atom("error")

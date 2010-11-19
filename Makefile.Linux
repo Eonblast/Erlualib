@@ -13,7 +13,7 @@ ERLMODS=$(patsubst src/%.erl,ebin/%.beam,$(wildcard src/*.erl))
 CRASHER=$(patsubst crash_tests/src/%.erl,crash_tests/ebin/%.beam,$(wildcard crash_tests/src/*.erl))
 OBJECTS=$(patsubst c_src/%.c,build/%.o,$(wildcard c_src/*.c))
 
-all: $(LIB) $(ERLMODS)
+all: $(LIB) $(ERLMODS) $(CRASHER)
 
 build/%.o: c_src/%.c
 	$(GCC) $(CFLAGS) -o $@ -c $<

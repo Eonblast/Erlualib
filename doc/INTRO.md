@@ -1,6 +1,4 @@
-## The Lua C API
-
-### Fast Start into Lua's C API
+## Fast Start Into The Lua C API
 
 This is a brief for people who tinkered with languages before.
 

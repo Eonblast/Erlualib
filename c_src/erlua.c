@@ -1,3 +1,23 @@
+/**-------------------------------------------------------------------
+*** File        : erlua.c
+*** Description : C-Side Erlang Driver of Erlualib
+*** Authors     : Ray Morgan, Darrik Mazey, Henning Diedrich
+*** Copyright   : (c) 2010 Eonblast Corporation for this fork
+*** License     : MIT for this fork
+*** Created     : 11 Apr 2009 Ray C. Morgan <@raycmorgan>
+*** Changed     : 20 Nov 2010 H. Diedrich <hd2010@eonblast.com>
+***-------------------------------------------------------------------
+***
+*** C Erlang port driver: start, stop, process. 
+***
+*** Receives data from the port and dispatches it to the individual
+*** handler functions in command.c. The main switch is in process().
+*** The switch constants are defined in c_src/commands.h (C-side)
+*** and include/lua_api.hrl (Erlang-side). You need to extend both to
+*** add a command.
+***
+***-----------------------------------------------------------------*/
+
 #include <erl_driver.h>
 #include <ei.h>
 #include <lua.h>
@@ -13,13 +33,14 @@ static void stop (ErlDrvData handle);
 static void process (ErlDrvData handle, ErlIOVec *ev);
 
 static ErlDrvEntry lua_driver_entry = {
+
     NULL,                             /* init */
     start,                            /* startup */
     stop,                             /* shutdown */
     NULL,                             /* output */
     NULL,                             /* ready_input */
     NULL,                             /* ready_output */
-    "liberlua",                        /* the name of the driver */
+    "liberlua",                       /* the name of the driver */
     NULL,                             /* finish */
     NULL,                             /* handle */
     NULL,                             /* control */
@@ -33,6 +54,7 @@ static ErlDrvEntry lua_driver_entry = {
     ERL_DRV_EXTENDED_MAJOR_VERSION,   /* ERL_DRV_EXTENDED_MAJOR_VERSION */
     ERL_DRV_EXTENDED_MAJOR_VERSION,   /* ERL_DRV_EXTENDED_MINOR_VERSION */
     ERL_DRV_FLAG_USE_PORT_LOCKING     /* ERL_DRV_FLAGs */
+
 };
 
 DRIVER_INIT(lua_driver) {
@@ -74,10 +96,16 @@ process(ErlDrvData handle, ErlIOVec *ev)
   ei_decode_tuple_header(buf, &index, &arty);
   ei_decode_long(buf, &index, &command);
   
-//  printf("Command: %ld\n", command);
-//  printf("sizeof: int: %ld, long: %ld, long long: %ld\n", sizeof(int), sizeof(long), sizeof(long long));
+  // Degbug
+  // printf("Command: %ld\n", command);
+  // printf("sizeof: int: %ld, long: %ld, long long: %ld\n", sizeof(int), sizeof(long), sizeof(long long));
   
   switch(command) {
+
+
+   /* Low Level Lua C API functions.  */
+
+
   case ERL_LUA_CALL:
     erl_lua_call(driver_data, buf, index);
     break;
@@ -93,10 +121,9 @@ process(ErlDrvData handle, ErlIOVec *ev)
   case ERL_LUA_GETTOP:
     erl_lua_gettop(driver_data, buf, index);
     break;
-	case ERL_LUA_NEXT:
-		erl_lua_next(driver_data, buf, index);
-		break;
-
+  case ERL_LUA_NEXT:
+	erl_lua_next(driver_data, buf, index);
+	break;
   case ERL_LUA_PUSHBOOLEAN:
     erl_lua_pushboolean(driver_data, buf, index);
     break;
@@ -137,13 +164,28 @@ process(ErlDrvData handle, ErlIOVec *ev)
     erl_lua_type(driver_data, buf, index);
     break;
   
+
+   /* Higher Level Lua C API 'Aux' functions.  */
+  
   case ERL_LUAL_DOSTRING:
     erl_lual_dostring(driver_data, buf, index);
     break;
 	
-	case ERL_LUAL_DOFILE:
-		erl_lual_dofile(driver_data, buf, index);
-		break;
+  case ERL_LUAL_DOFILE:
+	erl_lual_dofile(driver_data, buf, index);
+	break;
+
+   /* Higher Level Lua C API 'Aux' functions.  */
+  
+  case ERL_LUA_HIGH_PRINT:
+	erl_lua_high_print(driver_data, buf, index);
+	break;
+
+  case ERL_LUA_HIGH_PRINT_VARIABLE:
+	erl_lua_high_print_variable(driver_data, buf, index);
+	break;
+
+
   
   default:
     erl_lua_no_command(driver_data);

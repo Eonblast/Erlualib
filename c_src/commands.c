@@ -1,3 +1,28 @@
+/**-------------------------------------------------------------------
+*** File        : commands.c
+*** Description : C Implementation of Commands for Erlualib
+*** Authors     : Ray Morgan, Darrik Mazey, Henning Diedrich
+*** Copyright   : (c) 2010 Eonblast Corporation for this fork
+*** License     : MIT for this fork
+*** Created     : 11 Apr 2009 Ray C. Morgan <@raycmorgan>
+*** Changed     : 20 Nov 2010 H. Diedrich <hd2010@eonblast.com>
+***-------------------------------------------------------------------
+***
+*** Implentation of access to the Lua C API and higher functions.
+***
+*** The functions here are called from process() in erlua.c, which is
+*** the interface against the Erlang C extension API.
+***
+*** Extension requires 
+*** - Implementing a function here
+*** - Adding its declaration to c_src/erl_lua.h
+*** - Adding one constant to c_src/commands.h and include/lua_api.hrl
+*** - Adding a case for that constant to process() in c_src/erlua.c
+*** - Implementing a wrapper Erlang function call for it in lua.erl
+*** See INTRO.md
+***
+***-----------------------------------------------------------------*/
+
 #include <erl_driver.h>
 #include <ei.h>
 #include <lua.h>
@@ -11,6 +36,12 @@ static void reply_ok(lua_drv_t *driver_data);
 static void reply_error(lua_drv_t *driver_data);
 static char* decode_string(char *buf, int *index);
 
+
+/* ********************************************************************
+ *
+ *   General Lua API
+ *
+ * *******************************************************************/
 
 void
 erl_lua_call(lua_drv_t *driver_data, char *buf, int index)
@@ -316,6 +347,24 @@ erl_lua_type(lua_drv_t *driver_data, char *buf, int index)
   driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
 }
 
+void
+erl_lua_no_command(lua_drv_t *driver_data)
+{  
+  ErlDrvTermData spec[] = {
+        ERL_DRV_ATOM,   ATOM_ERROR,
+        ERL_DRV_STRING, (ErlDrvTermData) "No Command Found", 16,
+        ERL_DRV_TUPLE,  2
+  };
+  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+}
+
+
+/* ********************************************************************
+ *
+ *   Lua Auxiliary Functions
+ *
+ * *******************************************************************/
+
 
 void
 erl_lual_dostring(lua_drv_t *driver_data, char *buf, int index)
@@ -343,17 +392,73 @@ erl_lual_dofile(lua_drv_t *driver_data, char *buf, int index)
 		reply_error(driver_data);
 }
 
+
+/* ********************************************************************
+ *
+ *   Lua Language Function Emulations
+ *
+ * *******************************************************************/
+
+/**
+ * Lua-like print("text")
+ * 
+ * Call from Erlang with lua:print(L, Text).
+ */
 void
-erl_lua_no_command(lua_drv_t *driver_data)
-{  
-  ErlDrvTermData spec[] = {
-        ERL_DRV_ATOM,   ATOM_ERROR,
-        ERL_DRV_STRING, (ErlDrvTermData) "No Command Found", 16,
-        ERL_DRV_TUPLE,  2
-  };
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+erl_lua_high_print(lua_drv_t *driver_data, char *buf, int index)
+{
+	lua_State *L = driver_data->L;
+	char *str	 = decode_string(buf, &index);
+
+	lua_getfield(L, LUA_GLOBALSINDEX, "print"); /* function to call */
+	lua_pushstring(L, str);          /* push text to print on stack */
+    lua_call(L, 1, 0);     /* call 'print' w/ 1 arguments, 0 result */
+
+	reply_ok(driver_data);
+	free(str);
 }
 
+
+/**
+ * Lua-like print(var)
+ * 
+ * Call from Erlang with lua:print_variable(L, VarName).
+ */
+void
+erl_lua_high_print_variable(lua_drv_t *driver_data, char *buf, int index)
+{
+	lua_State *L = driver_data->L;
+	char *str	 = decode_string(buf, &index);
+
+	lua_getfield(L, LUA_GLOBALSINDEX, "print"); /* function to call */
+	lua_getfield(L, LUA_GLOBALSINDEX, str); /* push variable on stack */
+    lua_call(L, 1, 0);     /* call 'print' w/ 1 arguments, 0 result */
+
+	reply_ok(driver_data);
+	free(str);
+}
+
+
+/* Sample from Lua Manual: a = f("how", t.x, 14)
+ *
+ * lua_getfield(L, LUA_GLOBALSINDEX, "f"); // function to be called 
+ * lua_pushstring(L, "how");                        // 1st argument 
+ * lua_getfield(L, LUA_GLOBALSINDEX, "t");   // table to be indexed 
+ * lua_getfield(L, -1, "x");        // push result of t.x (2nd arg) 
+ * lua_remove(L, -2);                  // remove 't' from the stack 
+ * lua_pushinteger(L, 14);                          // 3rd argument 
+ * lua_call(L, 3, 1);     // call 'f' with 3 arguments and 1 result 
+ * lua_setfield(L, LUA_GLOBALSINDEX, "a");        // set global 'a' 
+ *
+ * http://www.lua.org/manual/5.1/manual.html#lua_call
+ */
+ 
+
+/* ********************************************************************
+ *
+ *   Utility
+ *
+ * *******************************************************************/
 
 static void
 reply_ok(lua_drv_t *driver_data)
@@ -368,7 +473,6 @@ reply_error(lua_drv_t *driver_data)
   ErlDrvTermData spec[] = {ERL_DRV_ATOM, ATOM_ERROR};
   driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
 }
-
 
 static char*
 decode_string(char *buf, int *index)
