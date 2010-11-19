@@ -1,14 +1,18 @@
 ## Erlualib
 
 This is a port driver library for **embedding** Lua into Erlang.
+
 It provides a simple interface that is very similar to the Lua C API
 and executes Lua scripts in Erlang the faster but less secure way.
 See below, '[Crashing the VM](#crashing)' and 
 '[Comparing Erlang-Lua Packages](#comparing)'.
 
-Read on to learn about using this library, for an intro to the
-inner workings and the Lua C API, see
-[Intro](https://github.com/Eonblast/Erlualib/blob/master/doc/INTRO.md).
+Read on to learn about using this library.
+For an intro to the **inner workings** and the Lua C API, see
+[INTRO](doc/INTRO.md).
+And to use this package as a starting point to implement
+**higher level and faster** Lua calls, see
+[OPTIMIZATION](doc/OPTIMIZATION.md).
 
 * This is a fork of Ray Morgan's
 [erl-lua](http://github.com/raycmorgan/erl-lua) 
@@ -142,20 +146,21 @@ If you have Windows instructions, please add them and push.
 ### Unit Test
 
 	$ erl -pa ./ebin
-	1> eunit:test(lua_test). 
+	1> eunit:test("tests"). 
 	
-See <src/lua_test.erl> for the source of these tests, it's quite illuminating.
+See [sample/hello/lua_sample.erl](sample/hello/lua_sample.erl) 
+for the source of these tests, it's quite illuminating.
 
 
 ## Samples
 
 ### File
 
-Samples are in <src/lua_sample.erl>
+An easy samples is in [sample/hello/lua_sample.erl](sample/hello/lua_sample.erl)
 
-	cd src
-	erlc -I ../include lua_sample.erl 
-	erl -pa ../ebin -noinput -noshell -run lua_sample hello -s init stop 
+	cd samples/hello
+	erlc -I ../../include lua_sample.erl 
+	erl -pa ../../ebin -noinput -noshell -run lua_sample hello -s init stop 
 
 This should give you
 
@@ -163,18 +168,20 @@ This should give you
 
 and
 
-	erl -pa ../ebin -noinput -noshell -run lua_sample type -s init stop 
+	erl -pa ../../ebin -noinput -noshell -run lua_sample type -s init stop 
 
 should print
 
 	Type of 23: number
 
-**Take a look at <src/lua_sample.erl> to understand more about the usage of this API.**
+**Take a look at [src/lua_sample.erl](src/lua_sample.erl) 
+to understand more about the usage of this API.**
 
 ### Shell
 
 Run the samples from the shell, start the Erlang Shell with a path into ebin
 
+	$ cd <package root>
 	$ erl -pa ./ebin
 
 Try this to print "Hello from Lua" **from Lua**:
@@ -200,7 +207,7 @@ Try this to execute a Lua type-to-string call:
 	
 This prints the type of the number 23 into the shell:
 
-	{ok, "number"}
+	"number"
 
 
 
