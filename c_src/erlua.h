@@ -19,7 +19,7 @@ extern "C" {
   void erl_lua_getfield (lua_drv_t *driver_data, char *buf, int index);
   void erl_lua_getglobal(lua_drv_t *driver_data, char *buf, int index);
   void erl_lua_gettop(lua_drv_t *driver_data, char *buf, int index);
-	void erl_lua_next(lua_drv_t *driver_data, char *buf, int index);
+  void erl_lua_next(lua_drv_t *driver_data, char *buf, int index);
   void erl_lua_pushboolean(lua_drv_t *driver_data, char *buf, int index);
   void erl_lua_pushinteger(lua_drv_t *driver_data, char *buf, int index);
   void erl_lua_pushstring(lua_drv_t *driver_data, char *buf, int index);
@@ -33,12 +33,25 @@ extern "C" {
   void erl_lua_tolstring(lua_drv_t *driver_data, char *buf, int index);
   void erl_lua_tonumber(lua_drv_t *driver_data, char *buf, int index);
   void erl_lua_type(lua_drv_t *driver_data, char *buf, int index);
+
+  /* Mid Level, Auxiliary Functions */
   
   void erl_lual_dostring (lua_drv_t *driver_data, char *buf, int index);
   void erl_lual_dofile (lua_drv_t *driver_data, char *buf, int index);
 
+  /* Higher Level Composite Functions */
+
   void erl_luac_print (lua_drv_t *driver_data, char *buf, int index);
   void erl_luac_print_variable (lua_drv_t *driver_data, char *buf, int index);
+
+  void erl_luac_func_0_0(lua_drv_t *driver_data, char *buf, int index);
+  void erl_luac_func_1_0(lua_drv_t *driver_data, char *buf, int index);
+  void erl_luac_func_2_0(lua_drv_t *driver_data, char *buf, int index);
+  void erl_luac_func_3_0(lua_drv_t *driver_data, char *buf, int index);
+  void erl_luac_func_0_1(lua_drv_t *driver_data, char *buf, int index);
+  void erl_luac_func_1_1(lua_drv_t *driver_data, char *buf, int index);
+  void erl_luac_func_2_1(lua_drv_t *driver_data, char *buf, int index);
+  void erl_luac_func_3_1(lua_drv_t *driver_data, char *buf, int index);
   
   void erl_lua_no_command (lua_drv_t *driver_data);
 

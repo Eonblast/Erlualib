@@ -33,9 +33,9 @@ big_negative_number_test() ->
 big_negative_float_number_test() ->
     push_to_helper(-5000000000.234, pushnumber, tonumber).
 
-
 string_test() ->
     push_to_helper("testing", pushstring, tolstring).
+
 
 
 call_test() ->

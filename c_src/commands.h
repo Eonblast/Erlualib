@@ -144,7 +144,23 @@
 
 #define ERL_LUAC_PRINT             200
 #define ERL_LUAC_PRINT_VARIABLE    201
-/* Atoms */
+
+#define ERL_LUAC_FUNC_0_0          202
+#define ERL_LUAC_FUNC_1_0          203
+#define ERL_LUAC_FUNC_2_0          204
+#define ERL_LUAC_FUNC_3_0          205
+#define ERL_LUAC_FUNC_0_1          206
+#define ERL_LUAC_FUNC_1_1          207
+#define ERL_LUAC_FUNC_2_1          208
+#define ERL_LUAC_FUNC_3_1          209
+
+
+/* Atoms 
+ * You could create them on the fly, don't to not break
+   a long running server with atom overflow.
+*/
 
 #define ATOM_OK driver_mk_atom("ok")
 #define ATOM_ERROR driver_mk_atom("error")
+#define ATOM_NOFUNC driver_mk_atom("nofunc")
+#define ATOM_NORETURN driver_mk_atom("noreturn")

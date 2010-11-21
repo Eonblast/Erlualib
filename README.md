@@ -209,6 +209,18 @@ This prints the type of the number 23 into the shell:
 
 	"number"
 
+As you can see, there is quite a bit of effort required to get this
+information across from Lua and every function call is actually a
+port call from Erlang to Lua, and a message received back. If performance
+is of importance, implement higher order functions in C, as seen in
+commands.c, or try if some of the exec(..) or func(..) calls are usefully
+for you.
+
+	11> lua:exec(L, "print", "Hi!"). 
+	
+These functions are restricted to string parameters, exec() is for
+execution of functions with no return value, func() returns one string
+return value.
 
 
 ## Comparing Erlang-Lua Packages<a name=comparing></a>

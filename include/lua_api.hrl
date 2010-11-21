@@ -156,3 +156,12 @@
 
 -define(ERL_LUAC_PRINT,             200).
 -define(ERL_LUAC_PRINT_VARIABLE,    201).
+
+-define(ERL_LUAC_FUNC_0_0,          202).
+-define(ERL_LUAC_FUNC_1_0,          203).
+-define(ERL_LUAC_FUNC_2_0,          204).
+-define(ERL_LUAC_FUNC_3_0,          205).
+-define(ERL_LUAC_FUNC_0_1,          206).
+-define(ERL_LUAC_FUNC_1_1,          207).
+-define(ERL_LUAC_FUNC_2_1,          208).
+-define(ERL_LUAC_FUNC_3_1,          209).

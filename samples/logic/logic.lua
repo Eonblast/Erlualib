@@ -1,10 +1,24 @@
-print("Hi here game logic.")
+print("Hi! Domain logic script starting up!")
 
-function the_math(nr)
+function some_math(a, b)
 
-	return nr * 12
+	return a * b + 2 * a + b
 
 end
 
-x = 12
-print("The math says for " .. x .. ": " .. the_math(x))
+function hello()
+
+	print("Hello Logic!")
+
+	return 0
+
+end
+
+function foo(txt)
+
+	print("foo: " .. txt)
+
+	return 0
+end
+
+print("Domain logic script started up fine.")

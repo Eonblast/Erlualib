@@ -3,7 +3,7 @@
 *** Description : C Implementation of Commands for Erlualib
 *** Authors     : Ray Morgan, Darrik Mazey, Henning Diedrich
 *** Copyright   : (c) 2010 Eonblast Corporation for this fork
-*** License     : MIT for this fork
+*** License     : MIT
 *** Created     : 11 Apr 2009 Ray C. Morgan <@raycmorgan>
 *** Changed     : 20 Nov 2010 H. Diedrich <hd2010@eonblast.com>
 ***-------------------------------------------------------------------
@@ -32,10 +32,14 @@
 #include "erlua.h"
 #include "commands.h"
 
-static void reply_ok(lua_drv_t *driver_data);
-static void reply_error(lua_drv_t *driver_data);
-static char* decode_string(char *buf, int *index);
+static void reply_ok(lua_drv_t *drv);
+static void reply_error(lua_drv_t *drv);
+static void reply(const lua_drv_t *drv, ErlDrvTermData *spec, size_t size);
+static void reply_string(lua_drv_t *drv, const char *str, size_t len);
+// new: static void reply_error_atom(lua_drv_t *drv, ErlDrvTermData erratom);
+static void reply_error_msgdup(lua_drv_t *drv, ErlDrvTermData erratom, char *msg);
 
+static char* decode_strdup(char *buf, int *index);
 
 /* ********************************************************************
  *
@@ -44,131 +48,131 @@ static char* decode_string(char *buf, int *index);
  * *******************************************************************/
 
 void
-erl_lua_call(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_call(lua_drv_t *drv, char *buf, int index)
 {
   long args, results;
   
   ei_decode_long(buf, &index, &args);
   ei_decode_long(buf, &index, &results);
   
-  lua_call(driver_data->L, args, results);
+  lua_call(drv->L, args, results);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
 }
 
 void
-erl_lua_concat(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_concat(lua_drv_t *drv, char *buf, int index)
 {
   long n;
   
   ei_decode_long(buf, &index, &n);
   
-  lua_concat(driver_data->L, n);
+  lua_concat(drv->L, n);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
 }
 
 void
-erl_lua_getfield(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_getfield(lua_drv_t *drv, char *buf, int index)
 {
   long i;
   char *name;
   
   ei_decode_long(buf, &index, &i);
-  name = decode_string(buf, &index);
+  name = decode_strdup(buf, &index);
   
-  lua_getfield(driver_data->L, i, name);
+  lua_getfield(drv->L, i, name);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
   free(name);
 }
 
 void
-erl_lua_getglobal(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_getglobal(lua_drv_t *drv, char *buf, int index)
 {
   char *name;
 
-  name = decode_string(buf, &index);
+  name = decode_strdup(buf, &index);
   
-  lua_getglobal(driver_data->L, name);
+  lua_getglobal(drv->L, name);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
   free(name);
 }
 
 void
-erl_lua_gettop(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_gettop(lua_drv_t *drv, char *buf, int index)
 {
   int size;
   
-  size = lua_gettop(driver_data->L);
+  size = lua_gettop(drv->L);
   
   ErlDrvTermData spec[] = {
         ERL_DRV_ATOM,   ATOM_OK,
         ERL_DRV_INT, (ErlDrvTermData) size,
         ERL_DRV_TUPLE,  2
   };
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+  reply(drv, spec, sizeof(spec));
 }
 
 void
-erl_lua_next(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_next(lua_drv_t *drv, char *buf, int index)
 {
-  long n;
+	long n;
   
-  ei_decode_long(buf, &index, &n);
+	ei_decode_long(buf, &index, &n);
   
-	lua_next(driver_data->L, n);
+	lua_next(drv->L, n);
 
-	reply_ok(driver_data);
+	reply_ok(drv);
 }
 
 void
-erl_lua_pushboolean(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_pushboolean(lua_drv_t *drv, char *buf, int index)
 {
   int b;
   
   ei_decode_boolean(buf, &index, &b);
   
-  lua_pushboolean(driver_data->L, b);
+  lua_pushboolean(drv->L, b);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
 }
 
 void
-erl_lua_pushinteger(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_pushinteger(lua_drv_t *drv, char *buf, int index)
 {
   long long num;
   
   ei_decode_longlong(buf, &index, &num);
   
-  lua_pushinteger(driver_data->L, num);
+  lua_pushinteger(drv->L, num);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
 }
 
 void
-erl_lua_pushstring(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_pushstring(lua_drv_t *drv, char *buf, int index)
 {
   char *str;
   
-  str = decode_string(buf, &index);
+  str = decode_strdup(buf, &index);
   
-  lua_pushstring(driver_data->L, str);
+  lua_pushstring(drv->L, str);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
   free(str);
 }
 
 void
-erl_lua_pushnil(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_pushnil(lua_drv_t *drv, char *buf, int index)
 {
-  lua_pushnil(driver_data->L);
-  reply_ok(driver_data);
+  lua_pushnil(drv->L);
+  reply_ok(drv);
 }
 
 void
-erl_lua_pushnumber(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_pushnumber(lua_drv_t *drv, char *buf, int index)
 {
   double dnum;
   long long lnum;
@@ -179,59 +183,59 @@ erl_lua_pushnumber(lua_drv_t *driver_data, char *buf, int index)
   switch (type) {
   case ERL_FLOAT_EXT:
     ei_decode_double(buf, &index, &dnum);
-    lua_pushnumber(driver_data->L, dnum);
+    lua_pushnumber(drv->L, dnum);
     break;
   default:
     ei_decode_longlong(buf, &index, &lnum);
-    lua_pushnumber(driver_data->L, lnum);
+    lua_pushnumber(drv->L, lnum);
     break;
   }
   
-  reply_ok(driver_data);
+  reply_ok(drv);
 }
 
 void
-erl_lua_remove(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_remove(lua_drv_t *drv, char *buf, int index)
 {
   long i;
   
   ei_decode_long(buf, &index, &i);
   
-  lua_remove(driver_data->L, i);
+  lua_remove(drv->L, i);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
 }
 
 void
-erl_lua_setfield(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_setfield(lua_drv_t *drv, char *buf, int index)
 {
   long i;
   char *name;
   
   ei_decode_long(buf, &index, &i);
-  name = decode_string(buf, &index);
+  name = decode_strdup(buf, &index);
   
-  lua_setfield(driver_data->L, i, name);
+  lua_setfield(drv->L, i, name);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
   free(name);
 }
 
 void
-erl_lua_setglobal(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_setglobal(lua_drv_t *drv, char *buf, int index)
 {
   char *name;
   
-  name = decode_string(buf, &index);
+  name = decode_strdup(buf, &index);
   
-  lua_setglobal(driver_data->L, name);
+  lua_setglobal(drv->L, name);
   
-  reply_ok(driver_data);
+  reply_ok(drv);
   free(name);
 }
 
 void
-erl_lua_toboolean(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_toboolean(lua_drv_t *drv, char *buf, int index)
 {
   long i;
   int res;
@@ -240,34 +244,34 @@ erl_lua_toboolean(lua_drv_t *driver_data, char *buf, int index)
   
   ei_decode_long(buf, &index, &i);
   
-  res = lua_toboolean(driver_data->L, i);
+  res = lua_toboolean(drv->L, i);
   if (res)
     spec[1] = driver_mk_atom("true");
   else
     spec[1] = driver_mk_atom("false");
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+  reply(drv, spec, sizeof(spec));
 }
 
 void
-erl_lua_tointeger(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_tointeger(lua_drv_t *drv, char *buf, int index)
 {
   long i;
-  long long res;
+  long long result;
   
   ei_decode_long(buf, &index, &i);
   
-  res = lua_tointeger(driver_data->L, i);
+  result = lua_tointeger(drv->L, i);
   
   ErlDrvTermData spec[] = {
-        ERL_DRV_ATOM,   ATOM_OK,
-        ERL_DRV_INT, (ErlDrvTermData) res,
-        ERL_DRV_TUPLE,  2
+        ERL_DRV_ATOM, ATOM_OK,					    /* the atom 'ok' */
+        ERL_DRV_INT, (ErlDrvTermData) result,      /* the int result */
+        ERL_DRV_TUPLE,  2                      /* and it's a 2-tuple */
   };
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+  reply(drv, spec, sizeof(spec));
 }
 
 void
-erl_lua_tolstring(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_tolstring(lua_drv_t *drv, char *buf, int index)
 {
   size_t len;
   long i;
@@ -275,20 +279,46 @@ erl_lua_tolstring(lua_drv_t *driver_data, char *buf, int index)
   
   ei_decode_long(buf, &index, &i);
   
-  str = lua_tolstring(driver_data->L, i, &len);
-  
+  str = lua_tolstring(drv->L, i, &len);
+
   ErlDrvTermData spec[] = {
-        ERL_DRV_ATOM,   ATOM_OK,
-        ERL_DRV_STRING, (ErlDrvTermData) str, len,
-        ERL_DRV_TUPLE,  2
+        ERL_DRV_ATOM, ATOM_OK,					    /* the atom 'ok' */
+        ERL_DRV_STRING, (ErlDrvTermData) str, len,     /* the string */
+        ERL_DRV_TUPLE,  2                      /* and it's a 2-tuple */
   };
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+  reply(drv, spec, sizeof(spec));
 }
+
+/*---------------------------------------------------------------------
+*
+*	lua_tolstring: http://www.lua.org/manual/5.1/manual.html#lua_tolstring
+*
+*	[-0, +0, m] <- no change to stack, may throw error on low memory
+*
+*	const char *lua_tolstring (lua_State *L, int index, size_t
+*	*len);
+*
+*	Converts the Lua value at the given acceptable index to a C
+*	string. If len is not NULL, it also sets *len with the string
+*	length. The Lua value must be a string or a number; otherwise,
+*	the function returns NULL. If the value is a number, then
+*	lua_tolstring also changes the actual value in the stack to a
+*	string. (This change confuses lua_next when lua_tolstring is
+*	applied to keys during a table traversal.)
+*
+*	lua_tolstring returns a fully aligned pointer to a string
+*	inside the Lua state. This string always has a zero ('\0')
+*	after its last character (as in C), but can contain other zeros
+*	in its body. Because Lua has garbage collection, there is no
+*	guarantee that the pointer returned by lua_tolstring will be
+*	valid after the corresponding value is removed from the stack. 
+*
+*--------------------------------------------------------------------*/
 
 
 /* TODO: return a binary instead of a list that is then converted to a binary */
 void
-erl_lua_tonumber(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_tonumber(lua_drv_t *drv, char *buf, int index)
 {
   long i;
   double res;
@@ -298,7 +328,7 @@ erl_lua_tonumber(lua_drv_t *driver_data, char *buf, int index)
     
   ei_decode_long(buf, &index, &i);
   
-  res = lua_tonumber(driver_data->L, i);
+  res = lua_tonumber(drv->L, i);
   
   ei_encode_version(NULL, &encode_i);
   if ((long long) res == res) {
@@ -320,42 +350,45 @@ erl_lua_tonumber(lua_drv_t *driver_data, char *buf, int index)
   }
     
   ErlDrvTermData spec[] = {
-        ERL_DRV_ATOM,   ATOM_OK,
-        ERL_DRV_STRING, (ErlDrvTermData) eibuf, size,
-        ERL_DRV_TUPLE,  2
+        ERL_DRV_ATOM, ATOM_OK,					    /* the atom 'ok' */
+        ERL_DRV_STRING, (ErlDrvTermData) eibuf, size,  /* the buffer */
+        ERL_DRV_TUPLE,  2                      /* and it's a 2-tuple */
   };
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+  reply(drv, spec, sizeof(spec));
   free(eibuf);
   //driver_free_binary(bin);
 }
 
 void
-erl_lua_type(lua_drv_t *driver_data, char *buf, int index)
+erl_lua_type(lua_drv_t *drv, char *buf, int index)
 {
   long i;
   int lua_t;
   
   ei_decode_long(buf, &index, &i);
   
-  lua_t = lua_type(driver_data->L, i);
+  lua_t = lua_type(drv->L, i);
   
   ErlDrvTermData spec[] = {
         ERL_DRV_ATOM,   ATOM_OK,
         ERL_DRV_INT, (ErlDrvTermData) lua_t,
         ERL_DRV_TUPLE,  2
   };
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+  reply(drv, spec, sizeof(spec));
 }
 
 void
-erl_lua_no_command(lua_drv_t *driver_data)
+erl_lua_no_command(lua_drv_t *drv)
 {  
+
+  /* return value: "No Command Found" */
   ErlDrvTermData spec[] = {
-        ERL_DRV_ATOM,   ATOM_ERROR,
-        ERL_DRV_STRING, (ErlDrvTermData) "No Command Found", 16,
-        ERL_DRV_TUPLE,  2
+        ERL_DRV_ATOM,   ATOM_ERROR,              /* the atom 'error' */
+        ERL_DRV_STRING, 
+        (ErlDrvTermData) "No Command Found", 16,       /* the string */
+        ERL_DRV_TUPLE,  2                      /* and it's a 2-tuple */
   };
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
+  reply(drv, spec, sizeof(spec));
 }
 
 
@@ -367,29 +400,27 @@ erl_lua_no_command(lua_drv_t *driver_data)
 
 
 void
-erl_lual_dostring(lua_drv_t *driver_data, char *buf, int index)
+erl_lual_dostring(lua_drv_t *drv, char *buf, int index)
 {
-  char *code;
-  
-  code = decode_string(buf, &index);
-  
-  if (!luaL_dostring(driver_data->L, code)) // sic '!'
-    reply_ok(driver_data);
-  else
-    reply_error(driver_data);
+	char *code = decode_strdup(buf, &index);
+
+	if (!luaL_dostring(drv->L, code)) // sic '!'
+		reply_ok(drv);
+	else
+    	reply_error(drv);
 }
 
 void
-erl_lual_dofile(lua_drv_t *driver_data, char *buf, int index)
+erl_lual_dofile(lua_drv_t *drv, char *buf, int index)
 {
 	char *code;
 
-	code = decode_string(buf, &index);
+	code = decode_strdup(buf, &index);
 	
-	if (!luaL_dofile(driver_data->L, code)) // sic '!'
-		reply_ok(driver_data);
+	if (!luaL_dofile(drv->L, code)) // sic '!'
+		reply_ok(drv);
 	else
-		reply_error(driver_data);
+		reply_error(drv);
 }
 
 
@@ -405,19 +436,18 @@ erl_lual_dofile(lua_drv_t *driver_data, char *buf, int index)
  * Call from Erlang with lua:print(L, Text).
  */
 void
-erl_luac_print(lua_drv_t *driver_data, char *buf, int index)
+erl_luac_print(lua_drv_t *drv, char *buf, int index)
 {
-	lua_State *L = driver_data->L;
-	char *str	 = decode_string(buf, &index);
+	lua_State *L = drv->L;
+	char *str	 = decode_strdup(buf, &index);
 
 	lua_getfield(L, LUA_GLOBALSINDEX, "print"); /* function to call */
 	lua_pushstring(L, str);          /* push text to print on stack */
     lua_call(L, 1, 0);     /* call 'print' w/ 1 arguments, 0 result */
 
-	reply_ok(driver_data);
+	reply_ok(drv);
 	free(str);
 }
-
 
 /**
  * Lua-like print(var)
@@ -425,16 +455,16 @@ erl_luac_print(lua_drv_t *driver_data, char *buf, int index)
  * Call from Erlang with lua:print_variable(L, VarName).
  */
 void
-erl_luac_print_variable(lua_drv_t *driver_data, char *buf, int index)
+erl_luac_print_variable(lua_drv_t *drv, char *buf, int index)
 {
-	lua_State *L = driver_data->L;
-	char *str	 = decode_string(buf, &index);
+	lua_State *L = drv->L;
+	char *str	 = decode_strdup(buf, &index);
 
 	lua_getfield(L, LUA_GLOBALSINDEX, "print"); /* function to call */
 	lua_getfield(L, LUA_GLOBALSINDEX, str); /* push variable on stack */
     lua_call(L, 1, 0);     /* call 'print' w/ 1 arguments, 0 result */
 
-	reply_ok(driver_data);
+	reply_ok(drv);
 	free(str);
 }
 
@@ -452,7 +482,404 @@ erl_luac_print_variable(lua_drv_t *driver_data, char *buf, int index)
  *
  * http://www.lua.org/manual/5.1/manual.html#lua_call
  */
+
+
+/* ********************************************************************
+ * ********************************************************************
+ *
+ *   Broad Brush Simple Function Calls, without or with string params.
+ *
+ * ********************************************************************
+ * ********************************************************************
+ *
+ * This is a pretty pragmatic approach that covers a number of more
+ * standard cases in a faster fashion than single port commands.
+ *
+ *                                          Eonblast H. Diedrich 11/10
+ *-------------------------------------------------------------------*/
  
+/**
+ * Calls a function with no parameters and no return value.
+ */
+void
+erl_luac_func_0_0(lua_drv_t *drv, char *buf, int index)
+{
+	lua_State *L = drv->L;
+	char *name	 = decode_strdup(buf, &index);
+
+	lua_getfield(L, LUA_GLOBALSINDEX, name);     /* function to call */
+	if(lua_isfunction(L, -1)) { 
+	    lua_call(L, 0, 0);  /* call function w/o arguments, 0 result */
+		reply_ok(drv);
+	} else
+		reply_error_msgdup(drv, ATOM_NOFUNC, name);
+	
+	free(name);
+}
+
+
+/**
+ * Calls a function with 1 string parameter and no return value.
+ * TODO: NOT TESTED.
+ */
+void
+erl_luac_func_1_0(lua_drv_t *drv, char *buf, int index)
+{
+	lua_State *L = drv->L;
+	char *name	 = decode_strdup(buf, &index);
+	char *par1	 = decode_strdup(buf, &index);
+
+	lua_getfield(L, LUA_GLOBALSINDEX, name);     /* function to call */
+	if(lua_isfunction(L, -1)) {
+		lua_pushstring(L, par1);              /* push string in par1 */
+	    lua_call(L, 1, 0);   /* call function w/1 argument, 0 result */
+		reply_ok(drv);
+	} else
+		reply_error_msgdup(drv, ATOM_NOFUNC, name);
+
+	free(name);
+	free(par1);
+}
+
+
+/**
+ * Calls a function with 2 string parameters and no return value.
+ * TODO: NOT TESTED.
+ */
+void
+erl_luac_func_2_0(lua_drv_t *drv, char *buf, int index)
+{
+	lua_State *L = drv->L;
+	char *name	 = decode_strdup(buf, &index);
+	char *par1	 = decode_strdup(buf, &index);
+	char *par2	 = decode_strdup(buf, &index);
+
+	lua_getfield(L, LUA_GLOBALSINDEX, name);     /* function to call */
+	if(lua_isfunction(L, -1)) {
+		lua_pushstring(L, par1);              /* push string in par1 */
+		lua_pushstring(L, par2);              /* push string in par2 */
+	    lua_call(L, 2, 0);   /* call function w/2 argument, 0 result */
+		reply_ok(drv);
+	} else
+		reply_error_msgdup(drv, ATOM_NOFUNC, name);
+
+	free(name);
+	free(par1);
+	free(par2);
+}
+
+
+/**
+ * Calls a function with 3 string parameters and no return value.
+ * TODO: NOT TESTED.
+ */
+void
+erl_luac_func_3_0(lua_drv_t *drv, char *buf, int index)
+{
+	lua_State *L = drv->L;
+	char *name	 = decode_strdup(buf, &index);
+	char *par1	 = decode_strdup(buf, &index);
+	char *par2	 = decode_strdup(buf, &index);
+	char *par3	 = decode_strdup(buf, &index);
+
+	lua_getfield(L, LUA_GLOBALSINDEX, name);     /* function to call */
+	if(lua_isfunction(L, -1)) {
+		lua_pushstring(L, par1);              /* push string in par1 */
+		lua_pushstring(L, par2);              /* push string in par2 */
+		lua_pushstring(L, par3);              /* push string in par3 */
+	    lua_call(L, 3, 0);   /* call function w/3 argument, 0 result */
+		reply_ok(drv);
+	} else
+		reply_error_msgdup(drv, ATOM_NOFUNC, name);
+
+	reply_ok(drv);
+	free(name);
+	free(par1);
+	free(par2);
+	free(par3);
+}
+ 
+
+
+/**
+ * Calls a function with no parameter and 1 string return value.
+ * TODO: NOT TESTED.
+ */
+void
+erl_luac_func_0_1(lua_drv_t *drv, char *buf, int index)
+{
+	lua_State *L = drv->L;
+	char *name	 = decode_strdup(buf, &index);
+	const char *str;
+	size_t len;
+
+	lua_getfield(L, LUA_GLOBALSINDEX, name);     /* function to call */
+	if(lua_isfunction(L, -1)) {
+	
+		/* call function w/0 arguments, 1 string result */
+		lua_call(L, 0, 0);   
+
+		/* turn result on top of stack (num or str) into a C string */
+		str = lua_tolstring(L, -1, &len);
+    
+	    /* stage the string as return value */
+		reply_string(drv, str, len);
+
+		/* It's copied, now delete it from the stack */
+    	lua_remove(L, -1);
+	
+	} else
+		reply_error_msgdup(drv, ATOM_NOFUNC, name);
+
+
+	free(name);
+}
+
+
+/**
+ * Calls a function with 1 string parameter and 1 string return value.
+ * TODO: NOT TESTED.
+ */
+void
+erl_luac_func_1_1(lua_drv_t *drv, char *buf, int index)
+{
+	lua_State *L = drv->L;
+	char *name	 = decode_strdup(buf, &index);
+	char *par1	 = decode_strdup(buf, &index);
+	const char *str;
+	size_t len;
+
+	lua_getfield(L, LUA_GLOBALSINDEX, name);     /* function to call */
+	if(lua_isfunction(L, -1)) {
+	
+		 /* push string parameter */
+ 		lua_pushstring(L, par1);                    
+
+		/* call function w/1 arguments, 1 string result */
+		lua_call(L, 1, 1);   
+
+		/* turn result on top of stack (num or str) into a C string */
+		str = lua_tolstring(L, -1, &len);
+    
+	    /* stage the string as return value */
+		reply_string(drv, str, len);
+
+		/* It's copied, now delete it from the stack */
+   		lua_remove(L, -1);
+	} else
+		reply_error_msgdup(drv, ATOM_NOFUNC, name);
+
+	free(name);
+	free(par1);
+}
+
+
+/**
+ * Calls a function with 2 string parameters and 1 string return value.
+ * TODO: NOT TESTED.
+ */
+void
+erl_luac_func_2_1(lua_drv_t *drv, char *buf, int index)
+{
+	lua_State *L = drv->L;
+	char *name	 = decode_strdup(buf, &index);
+	char *par1	 = decode_strdup(buf, &index);
+	char *par2	 = decode_strdup(buf, &index);
+	const char *str;
+	size_t len;
+
+	lua_getfield(L, LUA_GLOBALSINDEX, name);     /* function to call */
+	if(lua_isfunction(L, -1)) {
+	
+		 /* push string parameters */
+ 		lua_pushstring(L, par1);                    
+ 		lua_pushstring(L, par2);                    
+
+		/* call function w/2 arguments, 1 string result */
+		lua_call(L, 2, 1);   
+
+		/* turn result on top of stack (num or str) into a C string */
+		str = lua_tolstring(L, -1, &len);
+    
+	    /* stage the string as return value */
+		reply_string(drv, str, len);
+
+		/* It's copied, now delete it from the stack */
+    	lua_remove(L, -1);
+	
+	} else
+		reply_error_msgdup(drv, ATOM_NOFUNC, name);
+
+	free(name);
+	free(par1);
+	free(par2);
+}
+
+
+/**
+ * Calls a function with 2 string parameters and 1 string return value.
+ * TODO: NOT TESTED.
+ */
+void
+erl_luac_func_3_1(lua_drv_t *drv, char *buf, int index)
+{
+	lua_State *L = drv->L;
+	char *name	 = decode_strdup(buf, &index);
+	char *par1	 = decode_strdup(buf, &index);
+	char *par2	 = decode_strdup(buf, &index);
+	char *par3	 = decode_strdup(buf, &index);
+	const char *str;
+	size_t len;
+
+	lua_getfield(L, LUA_GLOBALSINDEX, name);     /* function to call */
+	if(lua_isfunction(L, -1)) {
+	
+		 /* push string parameters */
+ 		lua_pushstring(L, par1);                    
+ 		lua_pushstring(L, par2);                    
+ 		lua_pushstring(L, par3);                    
+
+		/* call function w/3 arguments, 1 string result */
+		lua_call(L, 3, 1);   
+
+		/* turn result on top of stack (num or str) into a C string */
+		str = lua_tolstring(L, -1, &len);
+    
+	    /* stage the string as return value */
+		reply_string(drv, str, len);
+
+		/* It's copied, now delete it from the stack */
+    	lua_remove(L, -1);
+	
+	} else
+		reply_error_msgdup(drv, ATOM_NOFUNC, name);
+
+	free(name);
+	free(par1);
+	free(par2);
+	free(par3);
+}
+ 
+
+/* ********************************************************************
+ * ********************************************************************
+ *
+ *   Reply Functions
+ *
+ * ********************************************************************
+ * ********************************************************************
+ *
+ * Replies are asynchronous, arriving as messages at the Erlang port.
+ * The vehicle for passing state back is an ErlDrvTermData array.
+ *  
+ *  The usual order is a call to a reply function and then freeing up
+ *  memory used in a function. Note that e.g. strings passed into the
+ *  reply functions can be freed immediately after since stuff given
+ *  to the ErlDrvTermData[] is copied.
+ *                                          Eonblast H. Diedrich 11/10
+ *---------------------------------------------------------------------
+ * 
+ *	... am I free to destroy these buffers once that call returns?
+ *	The data is copied. You can do what you want with the buffers after 
+ *	driver_send_term or driver_output_term returns.
+ *
+ *	http://www.erlang.org/pipermail/erlang-questions/2009-May/043849.html
+ *
+ *-------------------------------------------------------------------*/
+                                           
+
+/**
+ * Ship a result as ErlDrvTermData to Erlang, which will deep copy it,
+ * including strings. So they need not be dups but can be direct from
+ * the heap, subject to gc etc.
+ */
+static void
+reply(const lua_drv_t *drv, ErlDrvTermData *spec, size_t size)
+{
+	driver_output_term(drv->port, spec, size / sizeof(ErlDrvTermData));
+}
+
+/**
+ * Reply ok to Erlang, as atom 'ok'.
+ */
+static void
+reply_ok(lua_drv_t *drv)
+{
+	ErlDrvTermData spec[] = {ERL_DRV_ATOM, ATOM_OK};
+
+	/* Ship to Erlang. */
+	reply(drv, spec, sizeof(spec));
+}
+
+/**
+ * Reply error to Erlang, as atom 'error'.
+ */
+static void
+reply_error(lua_drv_t *drv)
+{ 
+	ErlDrvTermData spec[] = { ERL_DRV_ATOM, ATOM_ERROR };
+
+	/* Ship to Erlang. */
+	reply(drv, spec, sizeof(spec));
+}
+
+/** new, not yet used:
+ * Reply error to Erlang, as tuple { error, <erratom> }
+ * Atoms are defined in commands.h. You could define them on the fly 
+ * from a string. Don't encourage that, as this may deplete atom
+ * storage capacity in the server if by mistake ever different strings
+ * are fed into the on-the-fly atom creation. Stick to defining them
+ * in commands.h and using a define here.
+ * /
+static void
+reply_error_atom(lua_drv_t *drv, ErlDrvTermData erratom)
+{ 
+	ErlDrvTermData spec[] = { 			   / * note: reverse grouping * /
+	  		ERL_DRV_ATOM, ATOM_ERROR,
+		  	ERL_DRV_ATOM, erratom,    / * atoms defined in commands.h * /
+        ERL_DRV_TUPLE,  2                      / * and it's a 2-tuple * /
+  		};
+
+	/ * Ship to Erlang. * /
+	reply(drv, spec, sizeof(spec));
+}
+*/
+
+/** 
+ * Reply error to Erlang, as tuple { error, <erratom>, <"message"> }.
+ * For atoms, see reply_error_atom().
+ */
+static void
+reply_error_msgdup(lua_drv_t *drv, ErlDrvTermData erratom, char *msg)
+{ 
+	ErlDrvTermData spec[] = {              /* note: reverse grouping */
+		  	ERL_DRV_ATOM, ATOM_ERROR,
+	  		ERL_DRV_ATOM, erratom,    /* atoms defined in commands.h */
+    	    ERL_DRV_STRING, (ErlDrvTermData) msg, strlen(msg), 		
+        ERL_DRV_TUPLE,  3                      /* and it's a 3-tuple */
+  		};
+  		
+	/* Ship to Erlang. Which will copy the spec and the string. */
+	reply(drv, spec, sizeof(spec));
+}
+
+/*
+ *
+ */
+static void
+reply_string(lua_drv_t *drv, const char *str, size_t len)
+{
+	/* Construct the spec wrap for Erlang. */
+ 	ErlDrvTermData spec[] = {
+        ERL_DRV_ATOM, ATOM_OK,					    /* the atom 'ok' */
+        ERL_DRV_STRING, (ErlDrvTermData) str, len,     /* the string */
+        ERL_DRV_TUPLE,  2                      /* and it's a 2-tuple */
+	};
+  
+	/* Ship to Erlang. Which will copy the spec and the string. */
+	reply(drv, spec, sizeof(spec));
+}
+
 
 /* ********************************************************************
  *
@@ -460,28 +887,21 @@ erl_luac_print_variable(lua_drv_t *driver_data, char *buf, int index)
  *
  * *******************************************************************/
 
-static void
-reply_ok(lua_drv_t *driver_data)
-{
-  ErlDrvTermData spec[] = {ERL_DRV_ATOM, ATOM_OK};
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
-}
-
-static void
-reply_error(lua_drv_t *driver_data)
-{ 
-  ErlDrvTermData spec[] = {ERL_DRV_ATOM, ATOM_ERROR};
-  driver_output_term(driver_data->port, spec, sizeof(spec) / sizeof(spec[0]));
-}
-
+/**
+ * Decode and duplicate the string in the buffer.
+ * Moves the &index up to behind the decoded part.
+ */
 static char*
-decode_string(char *buf, int *index)
+decode_strdup(char *buf, int *index)
 {
   int type, length;
   char *str;
   
-  ei_get_type(buf, index, &type, &length);
+  ei_get_type(buf, index, &type, &length); // TODO utf8? preflight?
   str = malloc(sizeof(char) * (length + 1));
   ei_decode_string(buf, index, str);
+  /* The index is updated to point right after the term encoded/decoded.
+   * http://www.erlang.org/doc/man/ei.html */
+   
   return str;
 }

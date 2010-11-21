@@ -185,8 +185,38 @@ process(ErlDrvData handle, ErlIOVec *ev)
 	erl_luac_print_variable(driver_data, buf, index);
 	break;
 
+  case ERL_LUAC_FUNC_0_0:
+	erl_luac_func_0_0(driver_data, buf, index);
+	break;
 
-  
+  case ERL_LUAC_FUNC_1_0:
+	erl_luac_func_1_0(driver_data, buf, index);
+	break;
+
+  case ERL_LUAC_FUNC_2_0:
+	erl_luac_func_2_0(driver_data, buf, index);
+	break;
+
+  case ERL_LUAC_FUNC_3_0:
+	erl_luac_func_3_0(driver_data, buf, index);
+	break;
+
+  case ERL_LUAC_FUNC_0_1:
+	erl_luac_func_0_1(driver_data, buf, index);
+	break;
+
+  case ERL_LUAC_FUNC_1_1:
+	erl_luac_func_1_1(driver_data, buf, index);
+	break;
+
+  case ERL_LUAC_FUNC_2_1:
+	erl_luac_func_2_1(driver_data, buf, index);
+	break;
+
+  case ERL_LUAC_FUNC_3_1:
+	erl_luac_func_3_1(driver_data, buf, index);
+	break;
+
   default:
     erl_lua_no_command(driver_data);
   }

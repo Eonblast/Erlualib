@@ -39,8 +39,8 @@ tests/%.beam: tests/%.erl
 $(LIB): $(OBJECTS)
 	$(GCC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -o $(LIB) $(OBJECTS) $(STATICLIBS)
 
-test: ebin/lua_test.beam
-	$(ERL) -pa ebin/ -noshell -s lua_test test -s init stop
+test: tests/lua_test.beam
+	$(ERL) -pa ebin/ -pa tests/ -noshell -s lua_test test -s init stop
 
 clean:
 	rm -f ebin/*.beam

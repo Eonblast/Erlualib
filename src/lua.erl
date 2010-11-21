@@ -65,6 +65,12 @@
 		c_print_variable/2, print_variable/2
          ]).
 
+% Pragmatic semi-hard wired signature calls
+-export([
+		exec/2, exec/3, exec/4, exec/5,
+		func/2, func/3, func/4, func/5 
+         ]).
+
 
 
 -include("lua.hrl").
@@ -550,18 +556,46 @@ dofile(#lua{port=Port}=L, Filename) ->
 %%%-------------------------------------------------------------------
 %%%-------------------------------------------------------------------
 %%
-%%%  Mid Level (II)
+%%%  Mid Level (II): Pragmatic Standard Calls
 %%
 %%%-------------------------------------------------------------------
 %%%-------------------------------------------------------------------
 %%
 % Use of low level calls, and replication of source, for performance.
 
-% func_1(L, Scope, Name, Para) ->
-%										% E.g.
-%	lua:getfield(L, global, Name),      % put "print" global on top of stack
-%	lua:push(L, Para),       			% put "hello" on top
-%	lua:call(L, 1, 0).                  % execute using the top 2 values on stack
+
+ exec(#lua{port=Port}=L, Name) ->
+    port_command(Port, term_to_binary({?ERL_LUAC_FUNC_0_0, Name})),
+    receive_return(L).
+
+ exec(#lua{port=Port}=L, Name, P1) ->
+    port_command(Port, term_to_binary({?ERL_LUAC_FUNC_1_0, Name, P1})),
+    receive_return(L).
+
+ exec(#lua{port=Port}=L, Name, P1, P2) ->
+    port_command(Port, term_to_binary({?ERL_LUAC_FUNC_2_0, Name, P1, P2})),
+    receive_return(L).
+
+ exec(#lua{port=Port}=L, Name, P1, P2, P3) ->
+    port_command(Port, term_to_binary({?ERL_LUAC_FUNC_3_0, Name, P1, P2, P3})),
+    receive_return(L).
+
+ func(#lua{port=Port}, Name) ->
+    port_command(Port, term_to_binary({?ERL_LUAC_FUNC_0_1, Name})),
+    receive_return_values().
+
+ func(#lua{port=Port}, Name, P1) ->
+    port_command(Port, term_to_binary({?ERL_LUAC_FUNC_1_1, Name, P1})),
+    receive_return_values().
+
+ func(#lua{port=Port}, Name, P1, P2) ->
+    port_command(Port, term_to_binary({?ERL_LUAC_FUNC_2_1, Name, P1, P2})),
+    receive_return_values().
+
+ func(#lua{port=Port}, Name, P1, P2, P3) ->
+    port_command(Port, term_to_binary({?ERL_LUAC_FUNC_3_1, Name, P1, P2, P3})),
+    receive_return_values().
+
 
 %
 %%

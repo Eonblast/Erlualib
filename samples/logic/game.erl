@@ -13,7 +13,7 @@
 
 
 -module(game).
--export([start/0, move/0, test/0]).
+-export([start/0, fail_no_func/0, move/0, test/0]).
 
 -include("lua.hrl").
 -include("lua_api.hrl").
@@ -24,7 +24,16 @@ start() ->
 
 	{ok, L} = lua:new_state(),				    % get the Lua engine
     lua:print(L, "Game Logic ...: "),
-    lua:dofile(L, "logic.lua").
+    lua:dofile(L, "logic.lua"),
+    lua:func(L, "hello"),
+    lua:func(L, "foo", "bar!").
+	
+%----------------------------------------------------------------------
+fail_no_func() ->
+
+	{ok, L} = lua:new_state(),				    % get the Lua engine
+    lua:dofile(L, "logic.lua"),
+    lua:func(L, "not_a_func").
 	
 	
 %----------------------------------------------------------------------
