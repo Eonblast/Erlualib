@@ -34,6 +34,7 @@
 
 static void reply_ok(lua_drv_t *drv);
 static void reply_error(lua_drv_t *drv);
+static void reply_errmem(lua_drv_t *drv);
 static void reply(const lua_drv_t *drv, ErlDrvTermData *spec, size_t size);
 static void reply_string(lua_drv_t *drv, const char *str, size_t len);
 // new: static void reply_error_atom(lua_drv_t *drv, ErlDrvTermData erratom);
@@ -404,7 +405,10 @@ erl_lual_dostring(lua_drv_t *drv, char *buf, int index)
 {
 	char *code = decode_strdup(buf, &index);
 
-	if (!luaL_dostring(drv->L, code)) // sic '!'
+	int ok = !luaL_dostring(drv->L, code); // sic '!' TODO: errmem?
+
+    free(code);
+    if(ok)
 		reply_ok(drv);
 	else
     	reply_error(drv);
@@ -417,12 +421,72 @@ erl_lual_dofile(lua_drv_t *drv, char *buf, int index)
 
 	code = decode_strdup(buf, &index);
 	
-	if (!luaL_dofile(drv->L, code)) // sic '!'
+	int ok = !luaL_dofile(drv->L, code); // sic '!' TODO: errmem?
+
+    free(code);
+    if(ok)
 		reply_ok(drv);
 	else
 		reply_error(drv);
 }
 
+/*---------------------------------------------------------------------
+*
+*	lual_loadstring: http://www.lua.org/manual/5.1/manual.html#lual_loadstring
+*
+*	int luaL_loadstring (lua_State *L, const char *s);
+*
+*	[-0, +1, m] <- leaves one result on stack, may throw error on low memory
+*
+*	Loads a string as a Lua chunk. This function uses lua_load to load the chunk
+*	in the zero-terminated string s.
+*	This function returns the same results as lua_load.
+*	Also as lua_load, this function only loads the chunk; it does not run it.
+*
+*	int lua_load (lua_State *L,
+*	              lua_Reader reader,
+*	              void *data,
+*	              const char *chunkname);
+*
+*	Loads a Lua chunk. If there are no errors, lua_load pushes the compiled
+*	chunk as a Lua function on top of the stack. Otherwise, it pushes an error
+*	 message. The return values of lua_load are:
+*
+*		*	0: no errors;
+*		*	LUA_ERRSYNTAX: syntax error during pre-compilation;
+*		*   LUA_ERRMEM: memory allocation error.
+*
+*	This function only loads a chunk; it does not run it.
+*	lua_load automatically detects whether the chunk is text or binary, and
+*	 loads it accordingly (see program luac).
+*	The lua_load function uses a user-supplied reader function to read the
+*	chunk (see lua_Reader). The data argument is an opaque value passed to
+*	the reader function.
+*	The chunkname argument gives a name to the chunk, which is used for
+*	error messages and in debug information (see ¤3.8).*
+*
+*--------------------------------------------------------------------*/
+
+/**
+ * parse a string, leave result on stack as anonymous function.
+ * 
+ * Call from Erlang with lua:loadstring(L, String).
+ */
+void
+erl_lual_loadstring(lua_drv_t *drv, char *buf, int index)
+{
+	char *code = decode_strdup(buf, &index);
+
+	int ret = luaL_loadstring(drv->L, code);
+
+    free(code);
+    if(ret == 0)
+		reply_ok(drv);
+    else if (ret == LUA_ERRMEM)
+   		reply_errmem(drv);
+	else
+    	reply_error(drv);
+}
 
 /* ********************************************************************
  *
@@ -495,7 +559,6 @@ erl_luac_print_variable(lua_drv_t *drv, char *buf, int index)
  * This is a pretty pragmatic approach that covers a number of more
  * standard cases in a faster fashion than single port commands.
  *
- *                                          Eonblast H. Diedrich 11/10
  *-------------------------------------------------------------------*/
  
 /**
@@ -592,7 +655,6 @@ erl_luac_func_3_0(lua_drv_t *drv, char *buf, int index)
 	} else
 		reply_error_msgdup(drv, ATOM_NOFUNC, name);
 
-	reply_ok(drv);
 	free(name);
 	free(par1);
 	free(par2);
@@ -617,7 +679,7 @@ erl_luac_func_0_1(lua_drv_t *drv, char *buf, int index)
 	if(lua_isfunction(L, -1)) {
 	
 		/* call function w/0 arguments, 1 string result */
-		lua_call(L, 0, 0);   
+		lua_call(L, 0, 1);   
 
 		/* turn result on top of stack (num or str) into a C string */
 		str = lua_tolstring(L, -1, &len);
@@ -630,7 +692,6 @@ erl_luac_func_0_1(lua_drv_t *drv, char *buf, int index)
 	
 	} else
 		reply_error_msgdup(drv, ATOM_NOFUNC, name);
-
 
 	free(name);
 }
@@ -717,7 +778,7 @@ erl_luac_func_2_1(lua_drv_t *drv, char *buf, int index)
 
 
 /**
- * Calls a function with 2 string parameters and 1 string return value.
+ * Calls a function with 3 string parameters and 1 string return value.
  * TODO: NOT TESTED.
  */
 void
@@ -776,7 +837,7 @@ erl_luac_func_3_1(lua_drv_t *drv, char *buf, int index)
  *  memory used in a function. Note that e.g. strings passed into the
  *  reply functions can be freed immediately after since stuff given
  *  to the ErlDrvTermData[] is copied.
- *                                          Eonblast H. Diedrich 11/10
+ *
  *---------------------------------------------------------------------
  * 
  *	... am I free to destroy these buffers once that call returns?
@@ -818,6 +879,18 @@ static void
 reply_error(lua_drv_t *drv)
 { 
 	ErlDrvTermData spec[] = { ERL_DRV_ATOM, ATOM_ERROR };
+
+	/* Ship to Erlang. */
+	reply(drv, spec, sizeof(spec));
+}
+
+/**
+ * Reply memory error to Erlang, as atom 'errmem'.
+ */
+static void
+reply_errmem(lua_drv_t *drv)
+{ 
+	ErlDrvTermData spec[] = { ERL_DRV_ATOM, ATOM_ERRMEM };
 
 	/* Ship to Erlang. */
 	reply(drv, spec, sizeof(spec));

@@ -163,4 +163,5 @@
 #define ATOM_OK driver_mk_atom("ok")
 #define ATOM_ERROR driver_mk_atom("error")
 #define ATOM_NOFUNC driver_mk_atom("nofunc")
+#define ATOM_ERRMEM driver_mk_atom("errmem")
 #define ATOM_NORETURN driver_mk_atom("noreturn")

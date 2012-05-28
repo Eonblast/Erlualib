@@ -1,11 +1,12 @@
-ERL_LIB=/opt/local/lib/erlang/lib/erl_interface-3.7
-CFLAGS=-Wall -I/opt/local/include -I$(ERL_LIB)/include -I /opt/local/lib/erlang/usr/include -I /LuaLibrary/src -I /opt/local/lib/erlang/lib/erl_interface-3.7/include 
-LDFLAGS=-dynamic -bundle -undefined suppress -flat_namespace -L. -L$(ERL_LIB)/lib
+ERL_USR=/opt/local/lib/erlang/usr
+ERL_INT=/opt/local/lib/erlang/lib/erl_interface-3.7.6
+ERL_LIB=/opt/local/lib/erlang/lib/erl_interface-3.7.6/lib
+CFLAGS=-Wall -I$(ERL_INT)/include -I$(ERL_USR)/include
+LDFLAGS=-dynamic -bundle -undefined suppress -flat_namespace -L. -L$(ERL_LIB)
 LDLIBS=
-STATICLIBS=$(ERL_LIB)/lib/libei.a $(ERL_LIB)/lib/liberl_interface.a /opt/local/lib/liblua.a
+STATICLIBS=$(ERL_LIB)/libei.a $(ERL_LIB)/liberl_interface.a /opt/local/lib/liblua.a
 GCC=/usr/bin/gcc
 ERL=/opt/local/bin/erl
-
 LIB=lib/liberlua.so
 
 # note: only the main files shall go into ebin, for less clutter

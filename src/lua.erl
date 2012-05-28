@@ -1,16 +1,16 @@
 %%%-------------------------------------------------------------------
 %%% File        : lua.erl
 %%% Description : Linked-in Lua Driver Library
-%%% Authors     : Ray Morgan, Darrik Mazey, Henning Diedrich
+%%% Authors     : Ray Morgan, Darrik Mazey, Henning Diedrich, Robert Virding
 %%% Copyright   : (c) 2010 Eonblast Corporation for this fork
 %%% License     : MIT for this fork
 %%% Created     : 11 Apr 2009 Ray Morgan <@raycmorgan>
-%%% Changed     : 20 Nov 2010 H. Diedrich <hd2010@eonblast.com>
+%%% Changed     : 27 May 2012 H. Diedrich <hd2012@eonblast.com>
 %%%-------------------------------------------------------------------
 %%%
 %%% This is a library for embedding Lua into Erlang. It provides a
-%%% simple interface that is very similar to the Lua C API.
-%%% Some mid- and higher level functions have been added.
+%%% simple interface that is very similar to the Lua C API and
+%%% and a higher level functions following the naming pattern of Luerl.
 %%%
 %%% For explanation of the inner workings, see doc/INTRO.md
 %%%
@@ -24,7 +24,7 @@
 -module(lua).
 
 % low level +
--export([new_state/0,
+-export([new_state/0, init/0,
          close/1,
          call/3,
          concat/2,
@@ -36,6 +36,8 @@
          gettable/3,
          gettable/2,
          gettop/1,
+         loadstring/1,
+         loadstring/2,
          next/2,
          pop/1,
          push/2,
@@ -44,6 +46,7 @@
          pushstring/2,
          pushnil/1,
          pushnumber/2,
+         remove/1,
          remove/2,
          setfield/3,
          setglobal/2,
@@ -71,7 +74,20 @@
 		func/2, func/3, func/4, func/5 
          ]).
 
-
+% Luerl compatibility
+-export([evalfile/1,evalfile/2,
+        do/1,do/2,dofile/1,
+        load/1, load/2,                 % alias of loadstring
+        stop/1,
+        gc/1
+        ]).
+%-export([eval/1,eval/2,evalfile/1,evalfile/2,
+%        do/1,do/2,dofile/1,dofile/2,
+%        loadfile/1,
+%        call/2,call/3,
+%        stop/1,
+%        gc/1,decode/2,encode/2 % all three not implemented.
+%        ]).
 
 -include("lua.hrl").
 -include("lua_api.hrl").
@@ -91,9 +107,14 @@
 %----------------------------------------------------------------------
 % @doc Open the Erlang driver port. 
 
+% new_state() -> State.
 new_state() ->
-
     {ok, lua_driver:open()}.
+
+% Luerl compatibility
+% init() -> State.
+init() ->
+    lua_driver:open().
     
 %----------------------------------------------------------------------
 % @doc Close the Erlang driver port. 
@@ -105,83 +126,76 @@ close(L) ->
 %----------------------------------------------------------------------
 % @doc Send one command to the port. 
 % Response needs to be received, e.g. by a receive_* function.
+%----------------------------------------------------------------------
+%:% Excerpts from:
+%:% http://www.erlang.org/doc/man/erlang.html#port_command-2
+%:% http://www.erlang.org/doc/man/erlang.html#port_command-3
+%:%
+%:% port_command(Port, Data) -> true
+%:%
+%:% Types: 
+%:%	Port = port() | atom() 
+%:% 	Data = iodata()
+%:%
+%:% Sends data to a port. Same as Port ! {self(), {command, Data}}
+%:% except for the error behaviour. Any process may
+%:% send data to a port with port_command/2, not only the port
+%:% owner (the connected process).
+%:% 
+%:% In short: port_command(Port, Data) has a cleaner and more
+%:% logical behaviour than Port ! {self(), {command, Data}}.
+%:% 
+%:% If the port is busy, the calling process will be suspended
+%:% until the port is not busy anymore. See below, /3.
+%:% 
+%:% For Failures, see below.
+%:%
+%:% port_command(Port, Data, OptionList) -> true|false
+%:% 
+%:% Types: 
+%:% 	Port = port() | atom() 
+%:% 	Data = iodata() 
+%:% 	OptionList = [Option]
+%:%	Option = force Option = nosuspend
+%:% 
+%:% Sends data to a port. port_command(Port, Data, []) equals
+%:% port_command(Port, Data).
+%:% 
+%:% If the port command is aborted, false is returned; otherwise,
+%:% true is returned.
+%:% 
+%:% If the port is busy, the calling process will be suspended
+%:% until the port is not busy anymore.
+%:% 
+%:% Options:
+%:% 
+%:% force
+%:%	The calling process will not be suspended if the port is
+%:% 	busy; instead, the port command is forced through. The call
+%:% 	will fail with a notsup exception if the driver of the port
+%:% 	does not support this. For more information see the
+%:% 	ERL_DRV_FLAG_SOFT_BUSY driver flag. 
+%:% nosuspend
+%:% 	The calling process will not be suspended if the port is busy;
+%:% 	instead, the port command is aborted and false is returned.
+%:% 
+%:% Failures:
+%:% 
+%:% badarg
+%:%	If Port is not an open port or the registered name of an
+%:% 	open port. 
+%:% badarg 
+%:%	If Data is not a valid io list. 
+%:% badarg 
+%:%	If OptionList is not a valid option list. 
+%:% notsup
+%:%	If the force option has been passed, but the driver of the
+%:%   port does not allow forcing through a busy port. 
+%----------------------------------------------------------------------
     
 command(#lua{port=Port}, Data) ->
 
-	%******************************************************************
-	%******************************************************************
-	%******************************************************************
-
     port_command(Port, term_to_binary(Data)).
-
-	%******************************************************************
-	%******************************************************************
-	%******************************************************************
-	%
-	% Excerpts from:
-	% http://www.erlang.org/doc/man/erlang.html#port_command-2
-	% http://www.erlang.org/doc/man/erlang.html#port_command-3
-	%
-	% port_command(Port, Data) -> true
-	%
-	% Types: 
-	%	Port = port() | atom() 
-	% 	Data = iodata()
-	%
-	% Sends data to a port. Same as Port ! {self(), {command, Data}}
-	% except for the error behaviour. Any process may
-	% send data to a port with port_command/2, not only the port
-	% owner (the connected process).
-	% 
-	% In short: port_command(Port, Data) has a cleaner and more
-	% logical behaviour than Port ! {self(), {command, Data}}.
-	% 
-	% If the port is busy, the calling process will be suspended
-	% until the port is not busy anymore. See below, /3.
-	% 
-	% For Failures, see below.
-	%
-	% port_command(Port, Data, OptionList) -> true|false
-	% 
-	% Types: 
-	% 	Port = port() | atom() 
-	% 	Data = iodata() 
-	% 	OptionList = [Option]
-	%	Option = force Option = nosuspend
-	% 
-	% Sends data to a port. port_command(Port, Data, []) equals
-	% port_command(Port, Data).
-	% 
-	% If the port command is aborted, false is returned; otherwise,
-	% true is returned.
-	% 
-	% If the port is busy, the calling process will be suspended
-	% until the port is not busy anymore.
-	% 
-	% Options:
-	% 
-	% force
-	%	The calling process will not be suspended if the port is
-	% 	busy; instead, the port command is forced through. The call
-	% 	will fail with a notsup exception if the driver of the port
-	% 	does not support this. For more information see the
-	% 	ERL_DRV_FLAG_SOFT_BUSY driver flag. 
-	% nosuspend
-	% 	The calling process will not be suspended if the port is busy;
-	% 	instead, the port command is aborted and false is returned.
-	% 
-	% Failures:
-	% 
-	% badarg
-	%	If Port is not an open port or the registered name of an
-	% 	open port. 
-	% badarg 
-	%	If Data is not a valid io list. 
-	% badarg 
-	%	If OptionList is not a valid option list. 
-	% notsup
-	%	If the force option has been passed, but the driver of the
-	%   port does not allow forcing through a busy port. 
 
 %----------------------------------------------------------------------
 % @doc Receive the return from a port call.
@@ -217,7 +231,7 @@ receive_return(L) ->
 % If there are other return values and you don't pop them, you unbalance
 % the stack, which will crash the Erlang VM over time.
 % @returns {ok, Str} | { other, Other} | { error, lua_error }
-% TODO: add error propagation.
+% TODO: add error propagation. Redundant w/receive_return(L)?
 
 receive_return_values() ->
     receive
@@ -298,7 +312,7 @@ call(L, Args, Results) ->
 %----------------------------------------------------------------------
 % lua_call: http://www.lua.org/manual/5.1/manual.html#lua_call
 %
-% [-(nargs + 1), +nresults, e]
+% [-(nargs + 1), +nresults, e] <- described below.
 %
 % void lua_call (lua_State *L, int nargs, int nresults);
 %
@@ -485,6 +499,9 @@ pushnumber(L, Num) when is_number(Num) ->
     command(L, {?ERL_LUA_PUSHNUMBER, Num}),
     receive_return(L).
 
+remove(L) ->
+    remove(L, gettop(L)).
+
 remove(L, Index) ->
     command(L, {?ERL_LUA_REMOVE, Index}),
     receive_return(L).
@@ -549,7 +566,25 @@ dostring(#lua{port=Port}=L, Code) ->
 
 dofile(#lua{port=Port}=L, Filename) ->
     port_command(Port, term_to_binary({?ERL_LUAL_DOFILE, Filename})),
-    receive_return(L).
+    receive_return(L);
+
+% Erlua compatibility: inverted parameters, state in return.
+% (Needs to be written here, grouped with the other dofile/2.)
+dofile(Filename, #lua{port=Port}=L) ->
+    port_command(Port, term_to_binary({?ERL_LUAL_DOFILE, Filename})),
+    {receive_return(L), L}.
+
+% parse and compile, leave result at stack top as anonymous function.
+loadstring(Chunk) ->
+    loadstring(lua:init(), Chunk).
+    
+loadstring(#lua{port=Port}=L, Chunk) ->
+    case port_command(Port, term_to_binary({?ERL_LUAL_LOADSTRING, Chunk})) of
+        true ->
+            {ok, L};
+        false ->
+            {error, L}
+    end.  
 
 %
 %%
@@ -596,6 +631,122 @@ dofile(#lua{port=Port}=L, Filename) ->
     port_command(Port, term_to_binary({?ERL_LUAC_FUNC_3_1, Name, P1, P2, P3})),
     receive_return_values().
 
+
+%
+%%
+%%%-------------------------------------------------------------------
+%%%-------------------------------------------------------------------
+%%
+%%%  Mid Level (III): Luerl Compatibility
+%%
+%%%-------------------------------------------------------------------
+%%%-------------------------------------------------------------------
+%%
+% Use of low level calls, and replication of source, for performance.
+
+%% luerl:eval(String|Binary|Form[, State]) -> Result.
+%eval(Chunk) ->
+%    eval(Chunk, init()).
+
+% eval(Chunk, St) ->
+%    try do(Chunk, St) of
+%        {Ret,_} -> {ok,Ret}
+%    catch 
+%         _E:R -> {error, R} % {error, {E, R}} ? <- todo: decide
+%    end.
+%    
+%% luerl:evalfile(Path[, State]) -> {ok, Result} | {error,Reason}.
+evalfile(Path) ->
+    evalfile(Path, init()).
+
+evalfile(Path, St) ->
+    try dofile(Path, St) of
+        {Ret,_} -> {ok,Ret}
+    catch 
+         _E:R -> {error, R} % {error, {E, R}} ? <- todo: decide
+    end.
+
+%%% lua:do(String|Binary|Form[, State]) -> {Result, NewState} 
+do(#lua{}=St) -> % execute an anon func at top of stack as per load/loadstring()
+    command(St, {?ERL_LUA_CALL, 0, 0}),
+    receive_return(St);
+
+do(SB) ->
+    do(SB, lua:init()).    
+
+do(B, #lua{}=St) when is_binary(B) ->
+    do(binary_to_list(B), St);
+do(S, #lua{}=St) when is_list(S) -> % same as dostring/2 but inverted parameter order
+    port_command(St#lua.port, term_to_binary({?ERL_LUAL_DOSTRING, S})),
+    receive_return(St).
+
+%% dofile(Path[, State]) -> {Result, NewState}.
+dofile(Path) ->
+    dofile(Path, init()).
+% for dofile(Path, St) see above.
+
+%%% load(String|Binary) -> {ok,Form}.
+% The following is almost identical to loadstring() for Luerl compatibility.
+load(Chunk) ->
+    load(Chunk, lua:init()).
+    
+load(Chunk, #lua{}=St) when is_binary(Chunk) ->
+    load(binary_to_list(Chunk), St);
+load(Chunk, #lua{}=St) when is_list(Chunk) ->
+    port_command(St#lua.port, term_to_binary({?ERL_LUAL_LOADSTRING, Chunk})),
+    {receive_return(St),St}.
+
+%%% compilefile(Path) -> {ok,Form}.
+%loadfile(Path) ->
+%    {ok,Bin} = file:read_file(Path),
+%    {ok,Ts,_} = luerl_scan:string(binary_to_list(Bin)),
+%    luerl_parse:chunk(Ts).
+
+%%% call(Form, Terms, State) -> {Result,State}
+%
+%call(C, Ts) -> call(C, Ts, init()).
+%
+%call(C, Ts, St0) ->
+%    {Lts,St1} = encode_list(Ts, St0),
+%    {Lrs,St2} = luerl_eval:chunk(C, Lts, St1),
+%    Rs = decode_list(Lrs, St2),
+%    {Rs,St2}.
+
+%%% stop(State) -> GCedState.
+stop(St) -> 
+    luerl_eval:gc(St).
+
+%%% gc(State) -> State.
+gc(_St) ->
+    exit(not_implemented).
+
+% For function head matching, from luerl.h:
+% -record(tref, {i}).				%Table reference, index
+
+%% encode_list([Term], State) -> {[LuerlTerm],State}.
+%% encode(Term, State) -> {LuerlTerm,State}.
+% encode_list(Ts, St) ->
+%    lists:mapfoldl(fun encode/2, St, Ts).
+% encode(B, St) when is_binary(B) -> {B,St};
+% encode(A, St) when is_atom(A) -> {atom_to_binary(A, latin1),St};
+% encode(I, St) when is_integer(I) -> {float(I),St};
+% encode(F, St) when is_float(F) -> {F,St};
+% encode(B, St) when is_boolean(B) -> {B,St};
+% encode(nil, St) -> {nil,St};
+% encode(_L, _St0) ->
+%     exit(not_implemented).
+
+%% decode_list([LuerlTerm], State) -> [Term].
+%% decode(LuerlTerm, State) -> Term.
+% decode_list(Lts, St) ->
+%     lists:map(fun (Lt) -> decode(Lt, St) end, Lts).
+% decode(B, _) when is_binary(B) -> B;
+% decode(N, _) when is_number(N) -> N;
+% decode(B, _) when is_boolean(B) -> B;
+% decode(nil, _) -> nil;
+% decode(#tref{i=_N}, _St) ->
+%     exit(not_implemented);
+% decode({function,Fun}, _) -> {function,Fun}.
 
 %
 %%
@@ -660,7 +811,7 @@ c_print_variable(L, Name) ->
 %%%-------------------------------------------------------------------
 %%%-------------------------------------------------------------------
 %%
-%%%  High Level (III): Implementation Agnostic Lua Function Emulation
+%%%  High Level (III): Verbatim Lua Language Function Emulation
 %%
 %%%-------------------------------------------------------------------
 %%%-------------------------------------------------------------------
@@ -680,7 +831,7 @@ print_variable(L, Name) -> c_print_variable(L, Name).
 %%%-------------------------------------------------------------------
 %%%-------------------------------------------------------------------
 %%
-%
+% 
 	
 dump_table(L, N) ->
     dump_table(L, N, none).
@@ -723,3 +874,4 @@ dump_table(L, N, NextKey) ->
             lua:remove(L, -1),
             [{list_to_atom(K),V}|dump_table(L, N, K)]
     end.
+

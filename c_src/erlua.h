@@ -38,6 +38,7 @@ extern "C" {
   
   void erl_lual_dostring (lua_drv_t *driver_data, char *buf, int index);
   void erl_lual_dofile (lua_drv_t *driver_data, char *buf, int index);
+  void erl_lual_loadstring (lua_drv_t *driver_data, char *buf, int index);
 
   /* Higher Level Composite Functions */
 

@@ -175,6 +175,10 @@ process(ErlDrvData handle, ErlIOVec *ev)
 	erl_lual_dofile(driver_data, buf, index);
 	break;
 
+  case ERL_LUAL_LOADSTRING:
+    erl_lual_loadstring(driver_data, buf, index);
+    break;
+	
    /* Higher Level Lua C API 'Aux' functions.  */
   
   case ERL_LUAC_PRINT:
